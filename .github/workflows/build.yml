@@ -21,9 +21,8 @@ jobs:
       - name: Build
         run: npm run build:win
 
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-exe
-          path: out/**/*.exe
+          path: dist/**/*.exe
