@@ -5,6 +5,12 @@
   "main": "./out/main/index.js",
   "author": "example.com",
   "homepage": "https://electron-vite.org",
+  "build": {
+    "appId": "com.tuapp.miapp",
+    "win": {
+      "target": "nsis"
+    }
+  },
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint --cache .",
@@ -26,7 +32,7 @@
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
     "@vitejs/plugin-react": "^5.1.1",
     "electron": "^39.2.6",
-    "electron-builder": "^26.0.12",
+    "electron-builder": "^26.8.1",
     "electron-vite": "^5.0.0",
     "eslint": "^9.39.1",
     "eslint-plugin-react": "^7.37.5",
