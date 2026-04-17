@@ -1,20 +1,18 @@
-import { useEffect, useState } from 'react'
+import { HashRouter, Routes, Route } from "react-router-dom";
+import Home from "./pages/Home.jsx";
+import ReciboAlquiler from "./pages/ReciboAlquiler.jsx";
+import NuevoAlquiler from "./pages/NuevoAlquiler/index.jsx";
 
 function App() {
-  const [data, setData] = useState(null)
-
-  useEffect(() => {
-    window.api.leerDB().then((resultado) => {
-      console.log('datos:', resultado)
-      setData(resultado)
-    })
-  }, [])
-
   return (
-    <div>
-      <p>{JSON.stringify(data, null, 2)}hoolaasjdjaskj</p>
-    </div>
-  )
+    <HashRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/recibo" element={<ReciboAlquiler />} />
+        <Route path="/nuevoAlquiler" element={<NuevoAlquiler />} />
+      </Routes>
+    </HashRouter>
+  );
 }
 
-export default App
+export default App;

@@ -1,0 +1,37 @@
+p,
+h2,
+h3 {
+  width: fit-content;
+}
+
+.modalDivContainer {
+  width: 100svw;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100svh;
+  background-color: rgba(var(--azul-900), 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modalDiv {
+  background-color: white;
+  color: rgb(var(--azul-900)) !important;
+  padding: 3em;
+  border-radius: 1em;
+
+  width: fit-content;
+  height: fit-content;
+  margin: auto;
+}
+
+.modalDiv button {
+  background-color: rgb(var(--azul-900));
+  color: white;
+}
+
+.modalDiv button:hover {
+  background-color: rgba(var(--azul-900), 0.5);
+}

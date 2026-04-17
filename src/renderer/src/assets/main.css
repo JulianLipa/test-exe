@@ -1,0 +1,67 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
+@import "tailwindcss";
+
+* {
+  box-sizing: border-box;
+
+  font-size: 1.01em;
+}
+
+input:focus,
+select:focus {
+  outline: none;
+}
+
+input,
+select {
+  border: 1px solid white;
+  padding: 0.6em;
+  border-radius: 0.5em;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+.montserrat {
+  font-family: "Montserrat", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 600;
+  font-style: normal;
+}
+
+.thin {
+  font-weight: 500;
+}
+
+:root {
+  --blanco-50: 237, 242, 248;
+  --azul-900: 14, 25, 37;
+}
+
+body {
+  background-color: rgb(var(--azul-900));
+  color: rgb(var(--blanco-50));
+  height: 100svh;
+  width: 100%;
+
+  padding: 4vh 2vw;
+}
+
+a,
+button {
+  cursor: pointer;
+  background-color: white;
+  color: rgb(var(--azul-900));
+  border-radius: 0.5em;
+  width: fit-content;
+  padding: 0.5em 1.5em;
+  border: 0.5px solid white;
+  transition: all 0.2s ease;
+}
+
+a:hover,
+button:hover {
+  background-color: rgba(255, 255, 255, 0.5);
+}
