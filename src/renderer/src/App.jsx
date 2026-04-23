@@ -1,6 +1,6 @@
 import { HashRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home.jsx";
-import ReciboAlquiler from "./pages/ReciboAlquiler.jsx";
+import ReciboAlquiler from "./pages/ReciboAlquiler/ReciboAlquiler.jsx";
 import NuevoAlquiler from "./pages/NuevoAlquiler/index.jsx";
 
 function App() {

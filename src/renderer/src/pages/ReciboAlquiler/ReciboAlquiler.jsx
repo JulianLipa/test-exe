@@ -19,9 +19,12 @@ const MONTHS = [
 export default function Page() {
   const thisYear = useMemo(() => new Date().getFullYear(), []);
 
+  const today = new Date().toISOString().split("T")[0];
+
   const [form, setForm] = useState({
-    nroAlquiler: { value: "", type: "number" },
+    id: { value: "", type: "number" },
     importe: { value: "", type: "money" },
+    fecha: { value: today, type: "date" }, // ✅ default hoy
     periodo: { month: "", year: "", type: "period" },
   });
 
@@ -60,12 +63,13 @@ export default function Page() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const data = {
-      nroAlquiler: form.nroAlquiler.value,
+      id: form.id.value,
       importe: Number(form.importe.value),
+      fecha: form.fecha.value, // ✅ NUEVO
       periodo:
         form.periodo.month && form.periodo.year
           ? `${form.periodo.month} ${form.periodo.year}`
@@ -73,6 +77,26 @@ export default function Page() {
     };
 
     console.log("DATA FINAL:", data);
+
+    try {
+      const res = await window.store.addRecibo(data);
+
+      if (res?.ok) {
+        alert("Recibo guardado correctamente");
+
+        setForm({
+          id: { value: "", type: "number" },
+          importe: { value: "", type: "money" },
+          fecha: { value: "", type: "date" }, // ✅ reset
+          periodo: { month: "", year: "", type: "period" },
+        });
+      } else {
+        alert("Error al guardar recibo");
+      }
+    } catch (err) {
+      console.error("Error:", err);
+      alert("Error inesperado");
+    }
   };
 
   return (
@@ -80,15 +104,13 @@ export default function Page() {
       <h2 className="mt-10 mb-4">Ingresar alquiler</h2>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        {/* NRO ALQUILER */}
         <input
           type="number"
-          placeholder={formatLabel("nroAlquiler")}
-          value={form.nroAlquiler.value}
-          onChange={(e) => setField("nroAlquiler", e.target.value)}
+          placeholder={formatLabel("id")}
+          value={form.id.value}
+          onChange={(e) => setField("id", e.target.value)}
         />
 
-        {/* IMPORTE */}
         <input
           type="text"
           placeholder={formatLabel("importe")}
@@ -99,7 +121,13 @@ export default function Page() {
           }}
         />
 
-        {/* PERIODO */}
+        {/* ✅ NUEVO CAMPO FECHA */}
+        <input
+          type="date"
+          value={form.fecha.value}
+          onChange={(e) => setField("fecha", e.target.value)}
+        />
+
         <div className="flex gap-2">
           <select
             value={form.periodo.month}
@@ -120,11 +148,7 @@ export default function Page() {
             <option value="">Año</option>
             {Array.from({ length: 10 }, (_, i) => {
               const year = thisYear - i;
-              return (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              );
+              return <option key={year}>{year}</option>;
             })}
           </select>
         </div>

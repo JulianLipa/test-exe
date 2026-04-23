@@ -18,7 +18,7 @@ function App() {
     <div className="montserrat flex flex-col">
       <h2 className="mb-2">Recientes</h2>
 
-      {data.length > 0 && <DataHandler src={data} />}
+      <DataHandler />
 
       <h2 className="mt-10 mb-2">Ingresar</h2>
 

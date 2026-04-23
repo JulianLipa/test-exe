@@ -6,43 +6,55 @@ let state = {
 };
 
 const store = {
-  // 🔹 obtener estado
+  // =========================
+  // DB GENERAL
+  // =========================
+
   getData: () => state.data,
 
-  // 🔹 cargar DB desde archivo
   loadDB: async () => {
     try {
       const db = await ipcRenderer.invoke("db:leer");
       state.data = db || [];
       return state.data;
-    } catch (error) {
-      console.error("Error leyendo DB:", error);
+    } catch {
       state.data = [];
-      return state.data;
+      return [];
     }
   },
 
-  // 🔹 agregar item (sin reescribir todo en React)
   addItem: async (item) => {
-    try {
-      const res = await ipcRenderer.invoke("db:agregar", item);
-
-      if (res?.ok) {
-        state.data.push(item); // actualiza store local
-      }
-
-      return res;
-    } catch (error) {
-      console.error("Error agregando item:", error);
-      return { ok: false, error };
-    }
+    const res = await ipcRenderer.invoke("db:agregar", item);
+    if (res?.ok) state.data.push(item);
+    return res;
   },
 
-  // 🔹 refrescar manual si lo necesitás
   refresh: async () => {
     const db = await ipcRenderer.invoke("db:leer");
     state.data = db || [];
     return state.data;
+  },
+
+  // =========================
+  // 🧾 RECIBOS
+  // =========================
+
+  addRecibo: (recibo) => ipcRenderer.invoke("recibos:agregar", recibo),
+  getRecibos: () => ipcRenderer.invoke("recibos:leer"),
+
+  // =========================
+  // 👀 WATCH DB (NUEVO)
+  // =========================
+
+  onDBUpdate: (callback) => {
+    const listener = (_, payload) => callback(payload);
+
+    ipcRenderer.on("db:update", listener);
+
+    // 🔥 opcional: devolver función para desuscribirse
+    return () => {
+      ipcRenderer.removeListener("db:update", listener);
+    };
   },
 };
 

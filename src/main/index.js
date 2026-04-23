@@ -2,8 +2,8 @@ import { app, shell, BrowserWindow, ipcMain } from "electron";
 import { join } from "path";
 import { electronApp, optimizer, is } from "@electron-toolkit/utils";
 import icon from "../../resources/icon.ico";
-import { readFileSync, existsSync } from "fs";
-import fs from "fs/promises"; // 🔥 nuevo
+import { readFileSync, existsSync, watch } from "fs"; // 👈 agregamos watch
+import fs from "fs/promises";
 
 function inicializarDB() {
   const dbPath = join(app.getPath("desktop"), "db", "data.json");
@@ -13,6 +13,36 @@ function inicializarDB() {
   } else {
     const data = JSON.parse(readFileSync(dbPath, "utf-8"));
   }
+}
+
+// =========================
+// 👀 WATCH DB (NUEVO)
+// =========================
+function watchDB(win) {
+  const dbDir = join(app.getPath("desktop"), "db");
+
+  if (!existsSync(dbDir)) return;
+
+  watch(dbDir, (eventType, filename) => {
+    if (!filename) return;
+
+    const fullPath = join(dbDir, filename);
+
+    try {
+      if (!existsSync(fullPath)) return;
+
+      const raw = readFileSync(fullPath, "utf-8");
+      const data = JSON.parse(raw || "[]");
+
+      // 🔥 enviamos al frontend
+      win.webContents.send("db:update", {
+        file: filename,
+        data,
+      });
+    } catch (err) {
+      console.error("Error leyendo cambio:", err);
+    }
+  });
 }
 
 function createWindow() {
@@ -43,6 +73,9 @@ function createWindow() {
   } else {
     mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
   }
+
+  // 👇 ACTIVAMOS EL WATCHER
+  watchDB(mainWindow);
 }
 
 app.whenReady().then(() => {
@@ -54,14 +87,16 @@ app.whenReady().then(() => {
 
   ipcMain.on("ping", () => console.log("pong"));
 
-  // LEER DB
+  // =========================
+  // DB GENERAL
+  // =========================
+
   ipcMain.handle("db:leer", () => {
     const dbPath = join(app.getPath("desktop"), "db", "data.json");
     const data = JSON.parse(readFileSync(dbPath, "utf-8"));
     return data;
   });
 
-  // GUARDAR DB
   ipcMain.handle("db:agregar", async (event, nuevoDato) => {
     try {
       const dbPath = join(app.getPath("desktop"), "db", "data.json");
@@ -72,13 +107,70 @@ app.whenReady().then(() => {
         data = JSON.parse(raw);
       }
 
-      data.push(nuevoDato);
+      const nuevo = {
+        createdAt: new Date().toISOString(),
+        ...nuevoDato,
+      };
+
+      data.push(nuevo);
       await fs.writeFile(dbPath, JSON.stringify(data, null, 2));
 
       return { ok: true };
     } catch (error) {
       console.error("Error agregando dato:", error);
       return { ok: false };
+    }
+  });
+
+  // =========================
+  // 🧾 RECIBOS
+  // =========================
+
+  ipcMain.handle("recibos:agregar", async (_, nuevoRecibo) => {
+    try {
+      const dbDir = join(app.getPath("desktop"), "db");
+      const filePath = join(dbDir, "recibos-alq.json");
+
+      if (!existsSync(dbDir)) {
+        await fs.mkdir(dbDir, { recursive: true });
+      }
+
+      let data = [];
+
+      if (existsSync(filePath)) {
+        const raw = readFileSync(filePath, "utf-8");
+        data = JSON.parse(raw || "[]");
+      } else {
+        await fs.writeFile(filePath, "[]");
+      }
+
+      const nuevo = {
+        createdAt: new Date().toISOString(),
+        ...nuevoRecibo,
+      };
+
+      data.push(nuevo);
+
+      await fs.writeFile(filePath, JSON.stringify(data, null, 2));
+
+      return { ok: true };
+    } catch (error) {
+      console.error("Error guardando recibo:", error);
+      return { ok: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle("recibos:leer", async () => {
+    try {
+      const filePath = join(app.getPath("desktop"), "db", "recibos-alq.json");
+
+      if (!existsSync(filePath)) return [];
+
+      const data = JSON.parse(readFileSync(filePath, "utf-8") || "[]");
+      return data;
+    } catch (error) {
+      console.error("Error leyendo recibos:", error);
+      return [];
     }
   });
 
