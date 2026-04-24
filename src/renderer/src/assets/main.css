@@ -7,6 +7,15 @@
   font-size: 1.01em;
 }
 
+:root {
+  --blanco-50: 237, 242, 248;
+  --azul-900: 14, 25, 37;
+}
+
+.blue{
+  color: var(--azul-900);
+}
+
 input:focus,
 select:focus {
   outline: none;
@@ -33,11 +42,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .thin {
   font-weight: 500;
-}
-
-:root {
-  --blanco-50: 237, 242, 248;
-  --azul-900: 14, 25, 37;
 }
 
 body {
