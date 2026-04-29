@@ -28,11 +28,17 @@
   border: 0.5px solid white;
   border-radius: 0.5em;
   background-color: rgba(255, 255, 255, 0.05);
+  color: rgb(var(--azul-900));
+  overflow: hidden;
 
-  flex: 0 0 auto; /* clave para scroll horizontal */
-  width: 20vw; /* reemplaza el 1/5vw inválido */
+  flex: 0 0 auto;
+  width: 20vw;
 }
 
-.card div{
+.cardTitle{
+  color: rgb(var(--azul-900)) !important;
+}
+
+.card div {
   padding: 1em;
 }

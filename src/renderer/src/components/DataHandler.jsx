@@ -7,8 +7,7 @@ const DataHandler = () => {
 
   const ordenar = (arr) =>
     [...arr].sort(
-      (a, b) =>
-        new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+      (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
     );
 
   useEffect(() => {
@@ -33,18 +32,13 @@ const DataHandler = () => {
         const ids = new Set(prev.map((p) => p.id));
 
         // 👉 detectar SOLO nuevos
-        const nuevos = (payload.data || []).filter(
-          (item) => !ids.has(item.id)
-        );
+        const nuevos = (payload.data || []).filter((item) => !ids.has(item.id));
 
         if (nuevos.length === 0) return prev;
 
         const conTipo = nuevos.map((i) => ({
           ...i,
-          type:
-            payload.file === "data.json"
-              ? "alquiler"
-              : "recibo",
+          type: payload.file === "data.json" ? "alquiler" : "recibo",
         }));
 
         const updated = [...conTipo, ...prev];

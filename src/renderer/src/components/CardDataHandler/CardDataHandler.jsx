@@ -17,8 +17,8 @@ const CardDataHandler = ({ data }) => {
   return (
     <div className={`montserrat ${styles.card}`}>
       {/* 🔹 HEADER */}
-      <div className={`flex w-full blue bg-white ${styles.cardTitle}`}>
-        <p className="thin blue">
+      <div className={`flex w-full bg-white ${styles.cardTitle}`}>
+        <p className="thin">
           {data.type?.toUpperCase()} N° {data.id}
         </p>
       </div>
@@ -26,7 +26,6 @@ const CardDataHandler = ({ data }) => {
       {/* 🔹 ALQUILER */}
       {data.type === "alquiler" && (
         <div>
-          <p>{data.id}</p>
           <p>
             {data?.locador?.apellido} - {data?.locatario?.apellido}
           </p>
