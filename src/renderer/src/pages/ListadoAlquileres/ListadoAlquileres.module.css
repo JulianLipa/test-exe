@@ -1,3 +1,7 @@
-.divTable{
+thead {
     color: rgb(var(--azul-900));
+}
+
+tbody {
+    color: white !important;
 }

@@ -7,6 +7,22 @@ import FormField from "./components/FormField";
 import ConfirmModal from "./components/ConfirmModal";
 import { formatForm } from "./utils/formatForm";
 
+// ✅ helper interno (podrías moverlo a utils si querés)
+const calculatePeriods = (start, end, intervalMonths) => {
+  if (!start || !end || !intervalMonths) return 0;
+
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+
+  const months =
+    (endDate.getFullYear() - startDate.getFullYear()) * 12 +
+    (endDate.getMonth() - startDate.getMonth());
+
+  if (months <= 0) return 0;
+
+  return Math.floor(months / Number(intervalMonths));
+};
+
 const NuevoAlquiler = () => {
   const navigate = useNavigate();
 
@@ -89,7 +105,22 @@ const NuevoAlquiler = () => {
   };
 
   const confirmSave = async () => {
-    const res = await window.store.addItem(formatForm(form));
+    // ✅ calcular períodos antes de guardar
+    const periodos = calculatePeriods(
+      form.fecha_inicio,
+      form.fecha_fin,
+      form.actualizacion_meses,
+    );
+
+    const data = {
+      ...formatForm(form),
+      periodos_ajuste: periodos,
+    };
+
+    console.log("PERIODOS:", periodos);
+    console.log("DATA FINAL:", data);
+
+    const res = await window.store.addItem(data);
 
     if (res.ok) {
       navigate("/");
@@ -105,8 +136,14 @@ const NuevoAlquiler = () => {
 
   if (!form) return null;
 
+  const periodosPreview = calculatePeriods(
+    form.fecha_inicio,
+    form.fecha_fin,
+    form.actualizacion_meses,
+  );
+
   return (
-    <div>
+    <div className={style.bodyNuevoAlquiler}>
       <h2 className="mb-5">Nuevo Alquiler</h2>
 
       <form onSubmit={handleSubmit}>
@@ -120,6 +157,7 @@ const NuevoAlquiler = () => {
             value={form.locador.apellido}
             onChange={handleChange}
             required
+            autoFocus
           />
           <FormField
             label="Nombre"
@@ -307,6 +345,11 @@ const NuevoAlquiler = () => {
               <p>
                 <strong>Actualización:</strong> cada {form.actualizacion_meses}{" "}
                 meses ({form.indice})
+              </p>
+
+              {/* ✅ preview */}
+              <p>
+                <strong>Ajustes totales:</strong> {periodosPreview}
               </p>
             </div>
 

@@ -5,6 +5,11 @@
   box-sizing: border-box;
 
   font-size: 1.01em;
+
+  font-family: "Montserrat", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 600;
+  font-style: normal;
 }
 
 :root {

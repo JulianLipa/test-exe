@@ -33,10 +33,16 @@
 
   flex: 0 0 auto;
   width: 20vw;
+  height: fit-content;
 }
 
-.cardTitle{
+.cardTitle {
   color: rgb(var(--azul-900)) !important;
+}
+
+.cardTitleDivContent p {
+  color: white;
+  font-weight: 300 !important;
 }
 
 .card div {

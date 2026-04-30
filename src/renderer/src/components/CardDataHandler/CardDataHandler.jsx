@@ -23,27 +23,29 @@ const CardDataHandler = ({ data }) => {
         </p>
       </div>
 
-      {/* 🔹 ALQUILER */}
-      {data.type === "alquiler" && (
-        <div>
-          <p>
-            {data?.locador?.apellido} - {data?.locatario?.apellido}
-          </p>
-          <p>{data?.inmueble?.direccion}</p>
-        </div>
-      )}
+      <div className={`${styles.cardTitleDivContent}`}>
+        {/* 🔹 ALQUILER */}
+        {data.type === "alquiler" && (
+          <div>
+            <p>
+              {data?.locador?.apellido} - {data?.locatario?.apellido}
+            </p>
+            <p>{data?.inmueble?.direccion}</p>
+          </div>
+        )}
 
-      {/* 🔹 RECIBO */}
-      {data.type === "recibo" && (
-        <div>
-          <p>{data?.nroAlquiler}</p>
-          <p>Importe: ${data?.importe}</p>
-          <p>{data?.periodo}</p>
-        </div>
-      )}
+        {/* 🔹 RECIBO */}
+        {data.type === "recibo" && (
+          <div>
+            <p>{data?.nroAlquiler}</p>
+            <p>Importe: ${data?.importe}</p>
+            <p>{data?.periodo}</p>
+          </div>
+        )}
 
-      {/* 🔹 FALLBACK (por si viene otra cosa) */}
-      {!data.type && renderDefault()}
+        {/* 🔹 FALLBACK (por si viene otra cosa) */}
+        {!data.type && renderDefault()}
+      </div>
     </div>
   );
 };

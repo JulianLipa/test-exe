@@ -32,8 +32,12 @@ export default function ListadoAlquileres() {
   })();
 
   return (
-    <div className="montserrat flex flex-col">
-      <h2 className="mt-10 mb-4">Listado de alquileres</h2>
+    <div className="montserrat flex flex-col gap-5">
+      <Link to="/" className="">
+        Volver
+      </Link>
+
+      <h2 className="">Listado de alquileres</h2>
 
       <table className="border-collapse border w-full">
         <thead>
@@ -61,10 +65,6 @@ export default function ListadoAlquileres() {
           ))}
         </tbody>
       </table>
-
-      <Link to="/" className="mt-4">
-        Volver
-      </Link>
     </div>
   );
 }

@@ -23,8 +23,9 @@ function App() {
       <h2 className="mt-10 mb-2">Ingresar</h2>
 
       <div className="flex gap-5">
-        <Link to="/recibo">Recibo</Link>
-        <Link to="/nuevoAlquiler">Alta Alquiler</Link>
+        <Link to="/nuevoAlquiler">[1] Alta Alquiler</Link>
+        <Link to="/listadoAlquiler">[2] Listado alquileres</Link>
+        <Link to="/recibo">[3] Recibo</Link>
       </div>
     </div>
   );

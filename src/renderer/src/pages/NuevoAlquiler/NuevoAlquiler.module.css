@@ -6,7 +6,6 @@ h3 {
 
 .modalDivContainer {
   width: 100svw;
-  position: absolute;
   top: 0;
   left: 0;
   height: 100svh;
@@ -14,6 +13,9 @@ h3 {
   display: flex;
   justify-content: center;
   align-items: center;
+  overflow: hidden;
+  z-index: 1000;
+  position: fixed;
 }
 
 .modalDiv {
@@ -34,4 +36,8 @@ h3 {
 
 .modalDiv button:hover {
   background-color: rgba(var(--azul-900), 0.5);
+}
+
+body:has(.modalDivContainer) {
+  overflow: hidden;
 }
