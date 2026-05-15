@@ -11,27 +11,28 @@ const DataHandler = () => {
     );
 
   useEffect(() => {
-    // 🔹 CARGA INICIAL
     const loadInitial = async () => {
-      const db = await window.store.loadDB();
-      const recibos = await window.store.getRecibos();
+      try {
+        const db = await window.store.loadDB();
+        const recibos = await window.store.getRecibos();
 
-      const merged = [
-        ...(db || []).map((i) => ({ ...i, type: "alquiler" })),
-        ...(recibos || []).map((i) => ({ ...i, type: "recibo" })),
-      ];
+        const merged = [
+          ...(db || []).map((i) => ({ ...i, type: "alquiler" })),
+          ...(recibos || []).map((i) => ({ ...i, type: "recibo" })),
+        ];
 
-      setData(ordenar(merged));
+        setData(ordenar(merged));
+      } catch (err) {
+        console.error(err);
+      }
     };
 
     loadInitial();
 
-    // 🔹 WATCH REALTIME (FIXED)
     const unsubscribe = window.store.onDBUpdate((payload) => {
       setData((prev) => {
         const ids = new Set(prev.map((p) => p.id));
 
-        // 👉 detectar SOLO nuevos
         const nuevos = (payload.data || []).filter((item) => !ids.has(item.id));
 
         if (nuevos.length === 0) return prev;
@@ -41,9 +42,7 @@ const DataHandler = () => {
           type: payload.file === "data.json" ? "alquiler" : "recibo",
         }));
 
-        const updated = [...conTipo, ...prev];
-
-        return ordenar(updated);
+        return ordenar([...conTipo, ...prev]);
       });
     });
 

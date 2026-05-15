@@ -11,6 +11,8 @@ const ConfirmModal = ({ open, children }) => {
         justifyContent: "center",
         alignItems: "center",
       }}
+
+      className="blue"
     >
       <div style={{ background: "#fff", padding: 20 }}>{children}</div>
     </div>

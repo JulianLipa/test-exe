@@ -70,7 +70,7 @@ const NuevoAlquiler = () => {
     <div>
       <h2>Nuevo Alquiler</h2>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="pb-5">
         <input name="id" value={form.id} readOnly />
 
         {formConfig.map((section) => (
@@ -111,10 +111,14 @@ const NuevoAlquiler = () => {
           </Section>
         ))}
 
-        <button type="submit">Guardar</button>
-        <button type="button" onClick={() => setShowCancel(true)}>
-          Cancelar
-        </button>
+        <div className="gap-4 flex">
+          <button type="submit" className="">
+            Guardar
+          </button>
+          <button type="button" onClick={() => setShowCancel(true)}>
+            Cancelar
+          </button>
+        </div>
       </form>
 
       <ConfirmModal open={showSave || showCancel}>
