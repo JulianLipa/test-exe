@@ -1,8 +1,21 @@
-const FormField = ({ label, ...props }) => {
+const FormField = ({
+  label,
+  name,
+  value,
+  onChange,
+  type = "text",
+  required,
+}) => {
   return (
-    <div className="flex flex-col">
+    <div style={{ display: "flex", flexDirection: "column", marginBottom: 10 }}>
       <p>{label}</p>
-      <input {...props} />
+      <input
+        name={name}
+        value={value || ""}
+        onChange={onChange}
+        type={type}
+        required={required}
+      />
     </div>
   );
 };

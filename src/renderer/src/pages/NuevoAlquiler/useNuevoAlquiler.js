@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { formConfig } from "./config/formConfig";
+import { createInitialForm } from "./utils/createInitialForm";
 
 export const useNuevoAlquiler = () => {
   const [data, setData] = useState([]);
@@ -10,21 +12,12 @@ export const useNuevoAlquiler = () => {
 
       const maxId = db.length ? Math.max(...db.map((e) => e.id)) : 0;
 
-      setData(db);
+      const base = { id: maxId + 1 };
 
-      setForm({
-        id: maxId + 1,
-        locador: { apellido: "", nombre: "", direccion: "", telefono: "" },
-        locatario: { apellido: "", nombre: "" },
-        inmueble: { direccion: "", telefono: "" },
-        impuestos: { AGIP: "", AYSA: "", EDESUR: "", METROGAS: "" },
-        monto_inicial: "",
-        fecha_inicio: "",
-        fecha_fin: "",
-        deposito_garantia: "",
-        actualizacion_meses: "",
-        indice: "",
-      });
+      const initialForm = createInitialForm(formConfig, base);
+
+      setData(db);
+      setForm(initialForm);
     };
 
     load();

@@ -18,15 +18,17 @@ const CardDataHandler = ({ data }) => {
     <div className={`montserrat ${styles.card}`}>
       {/* 🔹 HEADER */}
       <div className={`flex w-full bg-white ${styles.cardTitle}`}>
-        <p className="thin">
-          {data.type?.toUpperCase()} N° {data.id}
-        </p>
+        {(data.type === "alquiler" && (
+          <p className="thin">
+            {data.type?.toUpperCase()} N°{data.id}
+          </p>
+        )) || <p className="thin">{data.type?.toUpperCase()}</p>}
       </div>
 
       <div className={`${styles.cardTitleDivContent}`}>
         {/* 🔹 ALQUILER */}
         {data.type === "alquiler" && (
-          <div>
+          <div className={`${styles.noPadding}`}>
             <p>
               {data?.locador?.apellido} - {data?.locatario?.apellido}
             </p>
@@ -36,7 +38,8 @@ const CardDataHandler = ({ data }) => {
 
         {/* 🔹 RECIBO */}
         {data.type === "recibo" && (
-          <div>
+          <div className={`${styles.noPadding}`}>
+            <p>Alquiler N°{data.id}</p>
             <p>{data?.nroAlquiler}</p>
             <p>Importe: ${data?.importe}</p>
             <p>{data?.periodo}</p>

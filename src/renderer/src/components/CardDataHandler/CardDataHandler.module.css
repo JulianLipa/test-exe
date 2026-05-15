@@ -21,7 +21,11 @@
   height: 100%;
   pointer-events: none;
 
-  background: linear-gradient(to left, rgb(var(--azul-900)), rgba(255, 255, 255, 0));
+  background: linear-gradient(
+    to left,
+    rgb(var(--azul-900)),
+    rgba(255, 255, 255, 0)
+  );
 }
 
 .card {
@@ -47,4 +51,12 @@
 
 .card div {
   padding: 1em;
+}
+
+.noPadding {
+  padding: 0 !important;
+}
+
+.noPadding p {
+  font-weight: 400 !important;
 }

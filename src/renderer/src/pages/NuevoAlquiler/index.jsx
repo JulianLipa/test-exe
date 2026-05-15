@@ -1,22 +1,23 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import style from "./NuevoAlquiler.module.css";
+import { useNavigate, Link } from "react-router-dom";
+import { formConfig } from "./config/formConfig";
+import { useNuevoAlquiler } from "./useNuevoAlquiler";
+import { updateNestedValue } from "./utils/updateNestedValue";
+import { formatForm } from "./utils/formatForm";
 
 import Section from "./components/Section";
 import FormField from "./components/FormField";
 import ConfirmModal from "./components/ConfirmModal";
-import { formatForm } from "./utils/formatForm";
 
-// ✅ helper interno (podrías moverlo a utils si querés)
+import { useState } from "react";
+
 const calculatePeriods = (start, end, intervalMonths) => {
   if (!start || !end || !intervalMonths) return 0;
 
-  const startDate = new Date(start);
-  const endDate = new Date(end);
+  const s = new Date(start);
+  const e = new Date(end);
 
   const months =
-    (endDate.getFullYear() - startDate.getFullYear()) * 12 +
-    (endDate.getMonth() - startDate.getMonth());
+    (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth());
 
   if (months <= 0) return 0;
 
@@ -25,87 +26,24 @@ const calculatePeriods = (start, end, intervalMonths) => {
 
 const NuevoAlquiler = () => {
   const navigate = useNavigate();
+  const { form, setForm } = useNuevoAlquiler();
 
-  const [data, setData] = useState([]);
+  const [showSave, setShowSave] = useState(false);
+  const [showCancel, setShowCancel] = useState(false);
 
-  const [showConfirmSave, setShowConfirmSave] = useState(false);
-  const [showConfirmCancel, setShowConfirmCancel] = useState(false);
-
-  const [form, setForm] = useState({
-    id: "",
-    locador: {
-      apellido: "",
-      nombre: "",
-      direccion: "",
-      telefono: "",
-    },
-    locatario: {
-      apellido: "",
-      nombre: "",
-    },
-    inmueble: {
-      direccion: "",
-      telefono: "",
-    },
-    impuestos: {
-      AGIP: "",
-      AYSA: "",
-      EDESUR: "",
-      METROGAS: "",
-    },
-    monto_inicial: "",
-    fecha_inicio: "",
-    fecha_fin: "",
-    deposito_garantia: "",
-    actualizacion_meses: "",
-    indice: "",
-  });
-
-  useEffect(() => {
-    const load = async () => {
-      const db = await window.store.loadDB();
-
-      setData(db);
-
-      const maxId = db.length ? Math.max(...db.map((e) => e.id)) : 0;
-
-      setForm((prev) => ({
-        ...prev,
-        id: maxId + 1,
-      }));
-    };
-
-    load();
-  }, []);
+  if (!form) return null;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    if (name.includes(".")) {
-      const [p, c] = name.split(".");
-
-      setForm((prev) => ({
-        ...prev,
-        [p]: {
-          ...prev[p],
-          [c]: value,
-        },
-      }));
-    } else {
-      setForm((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
-    }
+    setForm((prev) => updateNestedValue(prev, name, value));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setShowConfirmSave(true);
+    setShowSave(true);
   };
 
   const confirmSave = async () => {
-    // ✅ calcular períodos antes de guardar
     const periodos = calculatePeriods(
       form.fecha_inicio,
       form.fecha_fin,
@@ -117,24 +55,10 @@ const NuevoAlquiler = () => {
       periodos_ajuste: periodos,
     };
 
-    console.log("PERIODOS:", periodos);
-    console.log("DATA FINAL:", data);
-
     const res = await window.store.addItem(data);
 
-    if (res.ok) {
-      navigate("/");
-    }
-
-    setShowConfirmSave(false);
+    if (res.ok) navigate("/");
   };
-
-  const handleCancel = (e) => {
-    e.preventDefault();
-    setShowConfirmCancel(true);
-  };
-
-  if (!form) return null;
 
   const periodosPreview = calculatePeriods(
     form.fecha_inicio,
@@ -143,234 +67,72 @@ const NuevoAlquiler = () => {
   );
 
   return (
-    <div className={style.bodyNuevoAlquiler}>
-      <h2 className="mb-5">Nuevo Alquiler</h2>
+    <div>
+      <h2>Nuevo Alquiler</h2>
 
       <form onSubmit={handleSubmit}>
         <input name="id" value={form.id} readOnly />
 
-        {/* ================= LOCADOR ================= */}
-        <Section title="Locador">
-          <FormField
-            label="Apellido"
-            name="locador.apellido"
-            value={form.locador.apellido}
-            onChange={handleChange}
-            required
-            autoFocus
-          />
-          <FormField
-            label="Nombre"
-            name="locador.nombre"
-            value={form.locador.nombre}
-            onChange={handleChange}
-            required
-          />
-          <FormField
-            label="Direccion"
-            name="locador.direccion"
-            value={form.locador.direccion}
-            onChange={handleChange}
-            required
-          />
-          <FormField
-            label="Telefono"
-            name="locador.telefono"
-            value={form.locador.telefono}
-            onChange={handleChange}
-            type="number"
-          />
-        </Section>
+        {formConfig.map((section) => (
+          <Section key={section.section} title={section.section}>
+            {section.fields.map((field) => {
+              const value = field.name
+                .split(".")
+                .reduce((acc, key) => acc?.[key], form);
 
-        {/* ================= LOCATARIO ================= */}
-        <Section title="Locatario">
-          <FormField
-            label="Apellido"
-            name="locatario.apellido"
-            value={form.locatario.apellido}
-            onChange={handleChange}
-            required
-          />
-          <FormField
-            label="Nombre"
-            name="locatario.nombre"
-            value={form.locatario.nombre}
-            onChange={handleChange}
-            required
-          />
-          <FormField
-            label="Direccion inmueble"
-            name="inmueble.direccion"
-            value={form.inmueble.direccion}
-            onChange={handleChange}
-            required
-          />
-          <FormField
-            label="Telefono inmueble"
-            name="inmueble.telefono"
-            value={form.inmueble.telefono}
-            onChange={handleChange}
-            type="number"
-          />
-        </Section>
+              if (field.type === "select") {
+                return (
+                  <div key={field.name}>
+                    <p>{field.label}</p>
+                    <select
+                      name={field.name}
+                      value={value}
+                      onChange={handleChange}
+                      required={field.required}
+                    >
+                      <option value="">Seleccionar</option>
+                      {field.options.map((opt) => (
+                        <option key={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  </div>
+                );
+              }
 
-        {/* ================= IMPUESTOS ================= */}
-        <Section title="Impuestos">
-          <FormField
-            label="AGIP"
-            name="impuestos.AGIP"
-            value={form.impuestos.AGIP}
-            onChange={handleChange}
-            type="number"
-          />
-          <FormField
-            label="AYSA"
-            name="impuestos.AYSA"
-            value={form.impuestos.AYSA}
-            onChange={handleChange}
-            type="number"
-          />
-          <FormField
-            label="EDESUR"
-            name="impuestos.EDESUR"
-            value={form.impuestos.EDESUR}
-            onChange={handleChange}
-            type="number"
-          />
-          <FormField
-            label="METROGAS"
-            name="impuestos.METROGAS"
-            value={form.impuestos.METROGAS}
-            onChange={handleChange}
-            type="number"
-          />
-        </Section>
+              return (
+                <FormField
+                  key={field.name}
+                  {...field}
+                  value={value}
+                  onChange={handleChange}
+                />
+              );
+            })}
+          </Section>
+        ))}
 
-        {/* ================= CONTRATO ================= */}
-        <Section title="Contrato">
-          <FormField
-            label="Monto inicial"
-            name="monto_inicial"
-            value={form.monto_inicial}
-            onChange={handleChange}
-            type="number"
-            required
-          />
-          <FormField
-            label="Fecha inicio"
-            name="fecha_inicio"
-            value={form.fecha_inicio}
-            onChange={handleChange}
-            type="date"
-            required
-          />
-          <FormField
-            label="Fecha fin"
-            name="fecha_fin"
-            value={form.fecha_fin}
-            onChange={handleChange}
-            type="date"
-            required
-          />
-          <FormField
-            label="Deposito garantia"
-            name="deposito_garantia"
-            value={form.deposito_garantia}
-            onChange={handleChange}
-            type="number"
-            required
-          />
-          <FormField
-            label="Actualizacion meses"
-            name="actualizacion_meses"
-            value={form.actualizacion_meses}
-            onChange={handleChange}
-            type="number"
-            required
-          />
-
-          <div className="flex flex-col">
-            <p>Índice</p>
-            <select
-              name="indice"
-              value={form.indice}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Seleccionar índice</option>
-              <option value="ICL">ICL</option>
-              <option value="IPC">IPC</option>
-              <option value="CASA_PROPIA">CASA PROPIA</option>
-            </select>
-          </div>
-        </Section>
-
-        {/* ================= ACTIONS ================= */}
-        <div className="mt-5 gap-5 flex">
-          <button type="submit">Guardar</button>
-          <button type="button" onClick={handleCancel}>
-            Cancelar
-          </button>
-        </div>
+        <button type="submit">Guardar</button>
+        <button type="button" onClick={() => setShowCancel(true)}>
+          Cancelar
+        </button>
       </form>
 
-      {/* ================= MODAL ================= */}
-      <ConfirmModal open={showConfirmSave || showConfirmCancel}>
-        {showConfirmSave && (
+      <ConfirmModal open={showSave || showCancel}>
+        {showSave && (
           <>
-            <div className="text-left">
-              <p>
-                <strong>Locador:</strong> {form.locador.apellido},{" "}
-                {form.locador.nombre}
-              </p>
-              <p>
-                <strong>Locatario:</strong> {form.locatario.apellido},{" "}
-                {form.locatario.nombre}
-              </p>
-              <p>
-                <strong>Dirección:</strong> {form.inmueble.direccion}
-              </p>
-              <p>
-                <strong>Fecha inicio:</strong> {form.fecha_inicio}
-              </p>
-              <p>
-                <strong>Fecha fin:</strong> {form.fecha_fin}
-              </p>
-              <p>
-                <strong>Monto inicial:</strong> ${form.monto_inicial}
-              </p>
-              <p>
-                <strong>Depósito:</strong> ${form.deposito_garantia}
-              </p>
-              <p>
-                <strong>Actualización:</strong> cada {form.actualizacion_meses}{" "}
-                meses ({form.indice})
-              </p>
+            <p>¿Confirmar guardado?</p>
+            <p>Ajustes: {periodosPreview}</p>
 
-              {/* ✅ preview */}
-              <p>
-                <strong>Ajustes totales:</strong> {periodosPreview}
-              </p>
-            </div>
-
-            <div className="gap-5 mt-5 flex w-full justify-center">
-              <button onClick={confirmSave}>Confirmar</button>
-              <button onClick={() => setShowConfirmSave(false)}>Volver</button>
-            </div>
+            <button onClick={confirmSave}>Confirmar</button>
+            <button onClick={() => setShowSave(false)}>Volver</button>
           </>
         )}
 
-        {showConfirmCancel && (
+        {showCancel && (
           <>
-            <h3>¿Cancelar operación?</h3>
-            <p>Se perderán los datos ingresados</p>
-
-            <div className="gap-5 mt-5 flex w-full justify-center">
-              <Link to="/">Sí, cancelar</Link>
-              <button onClick={() => setShowConfirmCancel(false)}>
-                Volver
-              </button>
-            </div>
+            <p>¿Cancelar?</p>
+            <Link to="/">Sí</Link>
+            <button onClick={() => setShowCancel(false)}>Volver</button>
           </>
         )}
       </ConfirmModal>

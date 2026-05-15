@@ -1,8 +1,8 @@
 const Section = ({ title, children }) => {
   return (
-    <div>
-      <h3 className="mt-5 bolder">{title}</h3>
-      <div className="flex gap-5 mb-5 mt-5 flex-wrap">{children}</div>
+    <div style={{ marginBottom: "20px" }}>
+      <h3>{title}</h3>
+      <div>{children}</div>
     </div>
   );
 };

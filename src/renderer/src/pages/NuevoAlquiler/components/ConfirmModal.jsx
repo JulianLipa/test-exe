@@ -1,15 +1,18 @@
-import style from "../NuevoAlquiler.module.css";
-
 const ConfirmModal = ({ open, children }) => {
   if (!open) return null;
 
   return (
-    <div className={`${style.modalDivContainer}`}>
-      <div
-        className={`inset-0 bg-black/30 flex items-center justify-center ${style.modalDiv}`}
-      >
-        <div className="bg-white p-5 rounded-xl">{children}</div>
-      </div>
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.4)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <div style={{ background: "#fff", padding: 20 }}>{children}</div>
     </div>
   );
 };
