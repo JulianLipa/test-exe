@@ -9,6 +9,7 @@ function App() {
     const load = async () => {
       const db = await window.store.loadDB();
       setData(db || []);
+      console.log(data);
     };
 
     load();

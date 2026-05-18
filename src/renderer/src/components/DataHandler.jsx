@@ -1,24 +1,51 @@
+// components/DataHandler/DataHandler.jsx
+
 import { useEffect, useState } from "react";
+
 import CardDataHandler from "./CardDataHandler/CardDataHandler";
+
 import styles from "./CardDataHandler/CardDataHandler.module.css";
 
 const DataHandler = () => {
   const [data, setData] = useState([]);
 
-  const ordenar = (arr) =>
-    [...arr].sort(
-      (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+  // =========================
+  // HELPERS
+  // =========================
+
+  const ordenar = (arr) => {
+    return [...arr].sort(
+      (a, b) =>
+        new Date(b.createdAt || b.fecha || 0) -
+        new Date(a.createdAt || a.fecha || 0),
     );
+  };
+
+  const getTypeFromFile = (file) => {
+    return file === "data.json" ? "alquiler" : "recibo";
+  };
+
+  // =========================
+  // INITIAL LOAD
+  // =========================
 
   useEffect(() => {
     const loadInitial = async () => {
       try {
-        const db = await window.store.loadDB();
+        const alquileres = await window.store.loadDB();
+
         const recibos = await window.store.getRecibos();
 
         const merged = [
-          ...(db || []).map((i) => ({ ...i, type: "alquiler" })),
-          ...(recibos || []).map((i) => ({ ...i, type: "recibo" })),
+          ...(alquileres || []).map((item) => ({
+            ...item,
+            type: "alquiler",
+          })),
+
+          ...(recibos || []).map((item) => ({
+            ...item,
+            type: "recibo",
+          })),
         ];
 
         setData(ordenar(merged));
@@ -29,20 +56,30 @@ const DataHandler = () => {
 
     loadInitial();
 
+    // =========================
+    // REALTIME UPDATES
+    // =========================
+
     const unsubscribe = window.store.onDBUpdate((payload) => {
       setData((prev) => {
-        const ids = new Set(prev.map((p) => p.id));
+        const type = getTypeFromFile(payload.file);
 
-        const nuevos = (payload.data || []).filter((item) => !ids.has(item.id));
+        const existingIds = new Set(
+          prev.map((item) => `${item.type}-${item.id}`),
+        );
 
-        if (nuevos.length === 0) return prev;
+        const nuevos = (payload.data || [])
+          .map((item) => ({
+            ...item,
+            type,
+          }))
+          .filter((item) => !existingIds.has(`${item.type}-${item.id}`));
 
-        const conTipo = nuevos.map((i) => ({
-          ...i,
-          type: payload.file === "data.json" ? "alquiler" : "recibo",
-        }));
+        if (!nuevos.length) {
+          return prev;
+        }
 
-        return ordenar([...conTipo, ...prev]);
+        return ordenar([...nuevos, ...prev]);
       });
     });
 
@@ -52,8 +89,11 @@ const DataHandler = () => {
   return (
     <div className={styles.wrapper}>
       <div className={`flex gap-5 ${styles.container}`}>
-        {data.map((item) => (
-          <CardDataHandler key={item.id} data={item} />
+        {data.map((item, index) => (
+          <CardDataHandler
+            key={`${item.type}-${item.id}-${index}`}
+            data={item}
+          />
         ))}
 
         <div className={`flex items-center justify-end ${styles.fadeRight}`}>

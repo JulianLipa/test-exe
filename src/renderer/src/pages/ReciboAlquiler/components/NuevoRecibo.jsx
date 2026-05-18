@@ -1,93 +1,52 @@
-import { useState, useMemo } from "react";
+// components/NuevoRecibo/index.jsx
 
-const MONTHS = [
-  "ENERO",
-  "FEBRERO",
-  "MARZO",
-  "ABRIL",
-  "MAYO",
-  "JUNIO",
-  "JULIO",
-  "AGOSTO",
-  "SEPTIEMBRE",
-  "OCTUBRE",
-  "NOVIEMBRE",
-  "DICIEMBRE",
-];
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
-export default function Page({ alquiler, onBack }) {
-  const thisYear = useMemo(() => new Date().getFullYear(), []);
+import { createInitialForm } from "./form.config";
 
-  const today = new Date().toISOString().split("T")[0];
+import {
+  buildReciboPayload,
+  formatCurrency,
+  formatLabel,
+  parseCurrencyInput,
+  validateForm,
+} from "./form.utils";
 
-  const [form, setForm] = useState({
-    id: {
-      value: alquiler?.id || "",
-      type: "number",
-    },
+export default function NuevoRecibo({ alquiler }) {
+  const navigate = useNavigate();
 
-    importe: {
-      value: "",
-      type: "money",
-    },
-
-    fecha: {
-      value: today,
-      type: "date",
-    },
-
-    periodo: {
-      month: "",
-      year: "",
-      type: "period",
-    },
-  });
+  const [form, setForm] = useState(createInitialForm());
 
   // =========================
-  // FORMATTERS
+  // AUTOCOMPLETE ID
   // =========================
 
-  const formatCurrency = (value) => {
-    if (!value) return "";
+  useEffect(() => {
+    if (!alquiler?.id) return;
 
-    return new Intl.NumberFormat("es-AR", {
-      style: "currency",
-      currency: "ARS",
-      minimumFractionDigits: 0,
-    }).format(Number(value));
-  };
+    setForm((prev) => ({
+      ...prev,
 
-  const formatLabel = (text) => {
-    if (!text) return "";
-
-    const spaced = text.replace(/([A-Z])/g, " $1");
-
-    return spaced.charAt(0).toUpperCase() + spaced.slice(1);
-  };
+      id: alquiler.id,
+    }));
+  }, [alquiler]);
 
   // =========================
-  // FORM HELPERS
+  // VALIDATION
+  // =========================
+
+  const isValid = validateForm(form);
+
+  // =========================
+  // HELPERS
   // =========================
 
   const setField = (key, value) => {
     setForm((prev) => ({
       ...prev,
 
-      [key]: {
-        ...prev[key],
-        value,
-      },
-    }));
-  };
-
-  const setPeriodo = (field, value) => {
-    setForm((prev) => ({
-      ...prev,
-
-      periodo: {
-        ...prev.periodo,
-        [field]: value,
-      },
+      [key]: value,
     }));
   };
 
@@ -98,133 +57,101 @@ export default function Page({ alquiler, onBack }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const data = {
-      id: form.id.value,
+    if (!isValid) {
+      alert("Completar todos los campos");
 
-      importe: Number(form.importe.value),
-
-      fecha: form.fecha.value,
-
-      periodo:
-        form.periodo.month && form.periodo.year
-          ? `${form.periodo.month} ${form.periodo.year}`
-          : "",
-
-      alquiler,
-    };
-
-    console.log("DATA FINAL:", data);
+      return;
+    }
 
     try {
-      const res = await window.store.addRecibo(data);
+      const payload = buildReciboPayload({
+        form,
+      });
 
-      if (res?.ok) {
-        alert("Recibo guardado correctamente");
+      const res = await window.store.addRecibo(payload);
 
-        setForm({
-          id: {
-            value: alquiler?.id || "",
-            type: "number",
-          },
-
-          importe: {
-            value: "",
-            type: "money",
-          },
-
-          fecha: {
-            value: today,
-            type: "date",
-          },
-
-          periodo: {
-            month: "",
-            year: "",
-            type: "period",
-          },
-        });
-      } else {
+      if (!res?.ok) {
         alert("Error al guardar recibo");
+
+        return;
       }
+
+      alert("Recibo guardado correctamente");
+
+      navigate("/");
     } catch (err) {
-      console.error("Error:", err);
+      console.error(err);
 
       alert("Error inesperado");
     }
   };
 
   return (
-    <div className="montserrat flex flex-col">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
       {/* =========================
-          FORM
+          ID
       ========================= */}
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <input
-          type="number"
-          placeholder={formatLabel("id")}
-          value={form.id.value}
-          onChange={(e) => setField("id", e.target.value)}
-        />
+      <input
+        type="number"
+        placeholder={formatLabel("id")}
+        value={form.id}
+        onChange={(e) => setField("id", e.target.value)}
+        className="bg-gray-100 border p-2 rounded"
+      />
 
-        <input
-          type="text"
-          placeholder={formatLabel("importe")}
-          value={formatCurrency(form.importe.value)}
-          onChange={(e) => {
-            const raw = e.target.value.replace(/[^\d]/g, "");
+      {/* =========================
+          IMPORTE
+      ========================= */}
 
-            setField("importe", raw);
-          }}
-        />
+      <input
+        type="text"
+        placeholder={formatLabel("importe")}
+        value={formatCurrency(form.importe)}
+        onChange={(e) =>
+          setField("importe", parseCurrencyInput(e.target.value))
+        }
+        className="border p-2 rounded"
+      />
 
-        <input
-          type="date"
-          value={form.fecha.value}
-          onChange={(e) => setField("fecha", e.target.value)}
-        />
+      {/* =========================
+          FECHA
+      ========================= */}
 
-        <div className="flex gap-2">
-          <select
-            value={form.periodo.month}
-            onChange={(e) => setPeriodo("month", e.target.value)}
-          >
-            <option value="">Mes</option>
+      <input
+        type="date"
+        value={form.fecha}
+        onChange={(e) => setField("fecha", e.target.value)}
+        className="border p-2 rounded"
+      />
 
-            {MONTHS.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
+      {/* =========================
+          PERIODO
+      ========================= */}
 
-          <select
-            value={form.periodo.year}
-            onChange={(e) => setPeriodo("year", e.target.value)}
-          >
-            <option value="">Año</option>
+      <input
+        type="text"
+        placeholder="Periodo"
+        value={form.periodo}
+        onChange={(e) => setField("periodo", e.target.value)}
+        className="border p-2 rounded"
+      />
 
-            {Array.from({ length: 10 }, (_, i) => {
-              const year = thisYear - i;
+      {/* =========================
+          ACTIONS
+      ========================= */}
 
-              return <option key={year}>{year}</option>;
-            })}
-          </select>
-        </div>
+      <button
+        type="submit"
+        disabled={!isValid}
+        className="bg-black text-white p-2 rounded disabled:opacity-50"
+      >
+        Guardar
+      </button>
 
-        <div className="flex gap-5">
-          <button
-            type="submit"
-            className="bg-black text-white p-2 rounded flex"
-          >
-            Guardar
-          </button>
-
-          <button type="button" onClick={onBack}>
-            Volver
-          </button>
-        </div>
-      </form>
-    </div>
+      <Link className="flex items-center" to="/">
+        Volver
+      </Link>
+    </form>
   );
 }
