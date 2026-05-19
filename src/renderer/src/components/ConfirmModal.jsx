@@ -10,11 +10,13 @@ const ConfirmModal = ({ open, children }) => {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
+        gap: "1em",
       }}
-
-      className="blue"
+      className="blue gap-2 flex"
     >
-      <div style={{ background: "#fff", padding: 20 }}>{children}</div>
+      <div style={{ background: "#fff", padding: 20, borderRadius: "1em" }}>
+        {children}
+      </div>
     </div>
   );
 };

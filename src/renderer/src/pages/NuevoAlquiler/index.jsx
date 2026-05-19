@@ -6,7 +6,7 @@ import { formatForm } from "./utils/formatForm";
 
 import Section from "./components/Section";
 import FormField from "./components/FormField";
-import ConfirmModal from "./components/ConfirmModal";
+import ConfirmModal from "../../components/ConfirmModal";
 
 import { useState } from "react";
 
@@ -127,17 +127,27 @@ const NuevoAlquiler = () => {
             <p>¿Confirmar guardado?</p>
             <p>Ajustes: {periodosPreview}</p>
 
-            <button onClick={confirmSave}>Confirmar</button>
-            <button onClick={() => setShowSave(false)}>Volver</button>
+            <div className="flex gap-2">
+              <button onClick={confirmSave} className="buttonBlack">
+                Confirmar
+              </button>
+              <button onClick={() => setShowSave(false)}>Volver</button>
+            </div>
           </>
         )}
 
         {showCancel && (
-          <>
-            <p>¿Cancelar?</p>
-            <Link to="/">Sí</Link>
-            <button onClick={() => setShowCancel(false)}>Volver</button>
-          </>
+          <div className="flex flex-col gap-2">
+            <p>¿Seguro que querés Cancelar?</p>
+            <div className="flex gap-2">
+              <Link to="/" className="buttonBlack">
+                Sí
+              </Link>
+              <button className="" onClick={() => setShowCancel(false)}>
+                Seguir ingresando
+              </button>
+            </div>
+          </div>
         )}
       </ConfirmModal>
     </div>

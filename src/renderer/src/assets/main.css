@@ -74,6 +74,14 @@ button {
   transition: all 0.2s ease;
 }
 
+.buttonBlack {
+  background-color: rgb(var(--azul-900)) !important;
+  color: white !important;
+
+  height: 100%;
+  display: flex;
+}
+
 a:hover,
 button:hover {
   background-color: rgba(255, 255, 255, 0.5);
