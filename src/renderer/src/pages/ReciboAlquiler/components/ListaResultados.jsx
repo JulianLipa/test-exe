@@ -1,5 +1,3 @@
-// pages/recibos/components/ListaResultados.jsx
-
 export default function ListaResultados({
   resultados,
   selectedAlquiler,

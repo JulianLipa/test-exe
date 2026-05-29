@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
-import { formConfig } from "./config/formConfig";
-import { createInitialForm } from "./utils/createInitialForm";
+
+import { createInitialForm } from "@renderer/utils";
+import { store } from "@renderer/services/store";
+
+import { formConfig } from "../config/formConfig";
 
 export const useNuevoAlquiler = () => {
   const [data, setData] = useState([]);
@@ -8,7 +11,7 @@ export const useNuevoAlquiler = () => {
 
   useEffect(() => {
     const load = async () => {
-      const db = await window.store.loadDB();
+      const db = await store.loadDB();
 
       const maxId = db.length ? Math.max(...db.map((e) => e.id)) : 0;
 

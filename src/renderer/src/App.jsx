@@ -1,8 +1,9 @@
 import { HashRouter, Routes, Route } from "react-router-dom";
-import Home from "./pages/Home.jsx";
-import ReciboAlquiler from "./pages/ReciboAlquiler/index.jsx";
-import NuevoAlquiler from "./pages/NuevoAlquiler/index.jsx";
-import ListadoAlquiler from "./pages/ListadoAlquileres/ListadoAlquileres.jsx"
+
+import Home from "@renderer/pages/Home";
+import ReciboAlquiler from "@renderer/pages/ReciboAlquiler";
+import NuevoAlquiler from "@renderer/pages/NuevoAlquiler";
+import ListadoAlquiler from "@renderer/pages/ListadoAlquileres";
 
 function App() {
   return (

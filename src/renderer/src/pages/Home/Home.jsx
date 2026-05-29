@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
-import DataHandler from "../components/DataHandler.jsx";
 import { Link } from "react-router-dom";
 
-function App() {
+import { DataHandler } from "@renderer/components";
+import { store } from "@renderer/services/store";
+
+function Home() {
   const [data, setData] = useState([]);
 
   useEffect(() => {
     const load = async () => {
-      const db = await window.store.loadDB();
+      const db = await store.loadDB();
       setData(db || []);
     };
 
@@ -31,4 +33,4 @@ function App() {
   );
 }
 
-export default App;
+export default Home;

@@ -1,12 +1,10 @@
-// pages/recibos/index.jsx
-
 import { useState } from "react";
 
 import BuscadorAlquiler from "./components/BuscadorAlquiler";
 import ListaResultados from "./components/ListaResultados";
 import NuevoRecibo from "./components/NuevoRecibo";
 
-export default function Page() {
+export default function ReciboAlquiler() {
   const [resultados, setResultados] = useState([]);
 
   const [selectedAlquiler, setSelectedAlquiler] = useState(null);

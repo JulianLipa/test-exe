@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+
+import { store } from "@renderer/services/store";
+
 import styles from "./ListadoAlquileres.module.css";
 
 export default function ListadoAlquileres() {
@@ -8,7 +11,7 @@ export default function ListadoAlquileres() {
   useEffect(() => {
     const getData = async () => {
       try {
-        const db = await window.store.loadDB();
+        const db = await store.loadDB();
         console.log("DB REAL:", db); // 👈 mirá esto en consola
         setData(db);
       } catch (err) {

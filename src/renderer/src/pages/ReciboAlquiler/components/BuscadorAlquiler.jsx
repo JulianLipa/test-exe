@@ -1,6 +1,6 @@
-// pages/recibos/components/BuscadorAlquiler.jsx
-
 import { useState } from "react";
+
+import { store } from "@renderer/services/store";
 
 export default function BuscadorAlquiler({ setResultados }) {
   const [apellido, setApellido] = useState("");
@@ -9,7 +9,7 @@ export default function BuscadorAlquiler({ setResultados }) {
     try {
       if (!apellido.trim()) return;
 
-      const data = await window.store.searchByApellidoLocatario(apellido);
+      const data = await store.searchByApellidoLocatario(apellido);
 
       setResultados(data || []);
     } catch (err) {

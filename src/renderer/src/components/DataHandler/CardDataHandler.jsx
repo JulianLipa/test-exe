@@ -1,5 +1,3 @@
-// components/DataHandler/CardDataHandler/CardDataHandler.jsx
-
 import styles from "./CardDataHandler.module.css";
 
 const CardDataHandler = ({ data }) => {
@@ -17,7 +15,9 @@ const CardDataHandler = ({ data }) => {
   // HELPERS
   // =========================
 
-  const formatCurrency = (value) => {
+  // Number-only formatter (rendered with a literal "$" prefix in the JSX
+  // below). Intentionally distinct from utils/currency's Intl ARS formatter.
+  const formatNumber = (value) => {
     return Number(value || 0).toLocaleString("es-AR");
   };
 
@@ -83,7 +83,7 @@ const CardDataHandler = ({ data }) => {
               {data.id}
             </p>
 
-            <p>Importe: ${formatCurrency(data?.importe)}</p>
+            <p>Importe: ${formatNumber(data?.importe)}</p>
 
             <p>{formatPeriodo(data?.periodo)}</p>
 

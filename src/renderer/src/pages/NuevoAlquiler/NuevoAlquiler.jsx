@@ -1,28 +1,16 @@
-import { useNavigate, Link } from "react-router-dom";
-import { formConfig } from "./config/formConfig";
-import { useNuevoAlquiler } from "./useNuevoAlquiler";
-import { updateNestedValue } from "./utils/updateNestedValue";
-import { formatForm } from "./utils/formatForm";
-
-import Section from "./components/Section";
-import FormField from "./components/FormField";
-import ConfirmModal from "../../components/ConfirmModal";
-
 import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 
-const calculatePeriods = (start, end, intervalMonths) => {
-  if (!start || !end || !intervalMonths) return 0;
+import { ConfirmModal, FormField, Section } from "@renderer/components/shared";
+import {
+  calculatePeriods,
+  formatForm,
+  updateNestedValue,
+} from "@renderer/utils";
+import { store } from "@renderer/services/store";
 
-  const s = new Date(start);
-  const e = new Date(end);
-
-  const months =
-    (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth());
-
-  if (months <= 0) return 0;
-
-  return Math.floor(months / Number(intervalMonths));
-};
+import { formConfig } from "./config/formConfig";
+import { useNuevoAlquiler } from "./hooks/useNuevoAlquiler";
 
 const NuevoAlquiler = () => {
   const navigate = useNavigate();
@@ -55,7 +43,7 @@ const NuevoAlquiler = () => {
       periodos_ajuste: periodos,
     };
 
-    const res = await window.store.addItem(data);
+    const res = await store.addItem(data);
 
     if (res.ok) navigate("/");
   };

@@ -1,10 +1,10 @@
-// components/DataHandler/DataHandler.jsx
-
 import { useEffect, useState } from "react";
 
-import CardDataHandler from "./CardDataHandler/CardDataHandler";
+import { store } from "@renderer/services/store";
 
-import styles from "./CardDataHandler/CardDataHandler.module.css";
+import CardDataHandler from "./CardDataHandler";
+
+import styles from "./CardDataHandler.module.css";
 
 const DataHandler = () => {
   const [data, setData] = useState([]);
@@ -32,9 +32,9 @@ const DataHandler = () => {
   useEffect(() => {
     const loadInitial = async () => {
       try {
-        const alquileres = await window.store.loadDB();
+        const alquileres = await store.loadDB();
 
-        const recibos = await window.store.getRecibos();
+        const recibos = await store.getRecibos();
 
         const merged = [
           ...(alquileres || []).map((item) => ({
@@ -60,7 +60,7 @@ const DataHandler = () => {
     // REALTIME UPDATES
     // =========================
 
-    const unsubscribe = window.store.onDBUpdate((payload) => {
+    const unsubscribe = store.onDBUpdate((payload) => {
       setData((prev) => {
         const type = getTypeFromFile(payload.file);
 

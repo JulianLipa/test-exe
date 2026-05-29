@@ -1,22 +1,21 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
-import ConfirmModal from "../../../components/ConfirmModal";
-
-import { createInitialForm } from "./form.config";
-
+import { ConfirmModal } from "@renderer/components/shared";
 import {
   buildReciboPayload,
+  createReciboForm,
   formatCurrency,
   formatLabel,
   parseCurrencyInput,
   validateForm,
-} from "./form.utils";
+} from "@renderer/utils";
+import { store } from "@renderer/services/store";
 
 export default function NuevoRecibo({ alquiler }) {
   const navigate = useNavigate();
 
-  const [form, setForm] = useState(createInitialForm());
+  const [form, setForm] = useState(createReciboForm());
   const [showConfirm, setShowConfirm] = useState(false);
 
   // =========================
@@ -75,7 +74,7 @@ export default function NuevoRecibo({ alquiler }) {
     try {
       const payload = buildReciboPayload({ form });
 
-      const res = await window.store.addRecibo(payload);
+      const res = await store.addRecibo(payload);
 
       if (!res?.ok) {
         alert("Error al guardar recibo");
@@ -155,10 +154,7 @@ export default function NuevoRecibo({ alquiler }) {
           <p className="mb-4">¿Seguro que querés volver?</p>
 
           <div className="flex gap-2">
-            <button
-              onClick={confirmBack}
-              className="buttonBlack"
-            >
+            <button onClick={confirmBack} className="buttonBlack">
               Sí
             </button>
 
