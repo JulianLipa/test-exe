@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import { ConfirmModal, FormField, Section } from "@renderer/components/shared";
 import {
@@ -109,35 +109,25 @@ const NuevoAlquiler = () => {
         </div>
       </form>
 
-      <ConfirmModal open={showSave || showCancel}>
-        {showSave && (
-          <>
-            <p>¿Confirmar guardado?</p>
-            <p>Ajustes: {periodosPreview}</p>
-
-            <div className="flex gap-2">
-              <button onClick={confirmSave} className="buttonBlack">
-                Confirmar
-              </button>
-              <button onClick={() => setShowSave(false)}>Volver</button>
-            </div>
-          </>
-        )}
-
-        {showCancel && (
-          <div className="flex flex-col gap-2">
-            <p>¿Seguro que querés Cancelar?</p>
-            <div className="flex gap-2">
-              <Link to="/" className="buttonBlack">
-                Sí
-              </Link>
-              <button className="" onClick={() => setShowCancel(false)}>
-                Seguir ingresando
-              </button>
-            </div>
-          </div>
-        )}
+      <ConfirmModal
+        open={showSave}
+        title="¿Confirmar guardado?"
+        confirmLabel="Confirmar"
+        cancelLabel="Volver"
+        onConfirm={confirmSave}
+        onCancel={() => setShowSave(false)}
+      >
+        <p>Ajustes: {periodosPreview}</p>
       </ConfirmModal>
+
+      <ConfirmModal
+        open={showCancel}
+        title="¿Seguro que querés Cancelar?"
+        confirmLabel="Sí"
+        cancelLabel="Seguir ingresando"
+        onConfirm={() => navigate("/")}
+        onCancel={() => setShowCancel(false)}
+      />
     </div>
   );
 };

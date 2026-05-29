@@ -1,23 +1,31 @@
-const ConfirmModal = ({ open, children }) => {
-  if (!open) return null;
+import Modal from "../Modal";
 
+import styles from "../Modal/Modal.module.css";
+
+// Confirmación estándar: mensaje (title/children) + acciones cancelar/confirmar.
+const ConfirmModal = ({
+  open,
+  title,
+  children,
+  confirmLabel = "Confirmar",
+  cancelLabel = "Cancelar",
+  onConfirm,
+  onCancel,
+}) => {
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.4)",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        gap: "1em",
-      }}
-      className="blue gap-2 flex"
-    >
-      <div style={{ background: "#fff", padding: 20, borderRadius: "1em" }}>
-        {children}
+    <Modal open={open} title={title}>
+      {children}
+
+      <div className={styles.actions}>
+        <button type="button" onClick={onCancel}>
+          {cancelLabel}
+        </button>
+
+        <button type="button" onClick={onConfirm} className="buttonBlack">
+          {confirmLabel}
+        </button>
       </div>
-    </div>
+    </Modal>
   );
 };
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { ConfirmModal } from "@renderer/components/shared";
+import { AlertModal, ConfirmModal } from "@renderer/components/shared";
 import {
   buildReciboPayload,
   createReciboForm,
@@ -17,6 +17,7 @@ export default function NuevoRecibo({ alquiler }) {
 
   const [form, setForm] = useState(createReciboForm());
   const [showConfirm, setShowConfirm] = useState(false);
+  const [alertState, setAlertState] = useState(null);
 
   // =========================
   // AUTOCOMPLETE ID
@@ -67,7 +68,7 @@ export default function NuevoRecibo({ alquiler }) {
     e.preventDefault();
 
     if (!isValid) {
-      alert("Completar todos los campos");
+      setAlertState({ message: "Completar todos los campos" });
       return;
     }
 
@@ -77,17 +78,24 @@ export default function NuevoRecibo({ alquiler }) {
       const res = await store.addRecibo(payload);
 
       if (!res?.ok) {
-        alert("Error al guardar recibo");
+        setAlertState({ message: "Error al guardar recibo" });
         return;
       }
 
-      alert("Recibo guardado correctamente");
-
-      navigate("/");
+      setAlertState({
+        message: "Recibo guardado correctamente",
+        onClose: () => navigate("/"),
+      });
     } catch (err) {
       console.error(err);
-      alert("Error inesperado");
+      setAlertState({ message: "Error inesperado" });
     }
+  };
+
+  const closeAlert = () => {
+    const onClose = alertState?.onClose;
+    setAlertState(null);
+    onClose?.();
   };
 
   return (
@@ -147,23 +155,22 @@ export default function NuevoRecibo({ alquiler }) {
       </form>
 
       {/* =========================
-          CONFIRM MODAL (UNIFICADO)
+          MODALES (UNIFICADOS)
       ========================= */}
-      <ConfirmModal open={showConfirm}>
-        <div className="p-4">
-          <p className="mb-4">¿Seguro que querés volver?</p>
+      <ConfirmModal
+        open={showConfirm}
+        title="¿Seguro que querés volver?"
+        confirmLabel="Sí"
+        cancelLabel="Cancelar"
+        onConfirm={confirmBack}
+        onCancel={cancelBack}
+      />
 
-          <div className="flex gap-2">
-            <button onClick={confirmBack} className="buttonBlack">
-              Sí
-            </button>
-
-            <button onClick={cancelBack} className="">
-              Cancelar
-            </button>
-          </div>
-        </div>
-      </ConfirmModal>
+      <AlertModal
+        open={!!alertState}
+        message={alertState?.message}
+        onClose={closeAlert}
+      />
     </>
   );
 }
