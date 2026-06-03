@@ -17,12 +17,12 @@ const ConfirmModal = ({
       {children}
 
       <div className={styles.actions}>
-        <button type="button" onClick={onCancel}>
-          {cancelLabel}
-        </button>
-
         <button type="button" onClick={onConfirm} className="buttonBlack">
           {confirmLabel}
+        </button>
+
+        <button type="button" onClick={onCancel}>
+          {cancelLabel}
         </button>
       </div>
     </Modal>
