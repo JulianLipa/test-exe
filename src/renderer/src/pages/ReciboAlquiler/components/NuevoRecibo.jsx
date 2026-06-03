@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import ConfirmModal from "../../../components/ConfirmModal";
+import ReciboImprimir from "./ReciboImprimir";
 
 import { createInitialForm } from "./form.config";
 
@@ -18,6 +19,7 @@ export default function NuevoRecibo({ alquiler }) {
 
   const [form, setForm] = useState(createInitialForm());
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   // =========================
   // AUTOCOMPLETE ID
@@ -82,13 +84,23 @@ export default function NuevoRecibo({ alquiler }) {
         return;
       }
 
-      alert("Recibo guardado correctamente");
-
-      navigate("/");
+      setShowSuccess(true);
     } catch (err) {
       console.error(err);
       alert("Error inesperado");
     }
+  };
+
+  // =========================
+  // SUCCESS ACTIONS
+  // =========================
+  const handleImprimir = () => {
+    window.print();
+    navigate("/");
+  };
+
+  const handleVolver = () => {
+    navigate("/");
   };
 
   return (
@@ -147,22 +159,36 @@ export default function NuevoRecibo({ alquiler }) {
         </div>
       </form>
 
-      {/* =========================
-          CONFIRM MODAL (UNIFICADO)
-      ========================= */}
+      <ReciboImprimir form={form} alquiler={alquiler} />
+
+      {/* MODAL: recibo guardado */}
+      <ConfirmModal open={showSuccess}>
+        <div className="p-4">
+          <p className="mb-4">Recibo guardado correctamente</p>
+
+          <div className="flex gap-2">
+            <button onClick={handleImprimir} className="buttonBlack">
+              Imprimir recibo
+            </button>
+
+            <button onClick={handleVolver}>
+              Volver al menú
+            </button>
+          </div>
+        </div>
+      </ConfirmModal>
+
+      {/* MODAL: confirmar volver */}
       <ConfirmModal open={showConfirm}>
         <div className="p-4">
           <p className="mb-4">¿Seguro que querés volver?</p>
 
           <div className="flex gap-2">
-            <button
-              onClick={confirmBack}
-              className="buttonBlack"
-            >
+            <button onClick={confirmBack} className="buttonBlack">
               Sí
             </button>
 
-            <button onClick={cancelBack} className="">
+            <button onClick={cancelBack}>
               Cancelar
             </button>
           </div>

@@ -86,3 +86,92 @@ a:hover,
 button:hover {
   background-color: rgba(255, 255, 255, 0.5);
 }
+
+/* ========================= PRINT ========================= */
+
+.recibo-print {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+
+  body {
+    background-color: white !important;
+    padding: 0 !important;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .recibo-print,
+  .recibo-print * {
+    visibility: visible;
+  }
+
+  .recibo-print {
+    display: block !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    max-height: 50%;
+    color: black;
+    font-family: "Montserrat", sans-serif;
+  }
+
+  .recibo-print__logo {
+    height: 40px;
+    width: auto;
+    margin-bottom: 6px;
+  }
+
+  .recibo-print__titulo {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .recibo-print__linea {
+    border: none;
+    border-top: 1px solid #333;
+    margin: 10px 0;
+  }
+
+  .recibo-print__datos {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 10px 0;
+  }
+
+  .recibo-print__row {
+    display: flex;
+    gap: 12px;
+  }
+
+  .recibo-print__label {
+    font-weight: 700;
+    min-width: 110px;
+    font-size: 13px;
+  }
+
+  .recibo-print__value {
+    font-weight: 500;
+    font-size: 13px;
+  }
+
+  .recibo-print__importe {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    font-size: 16px;
+    font-weight: 700;
+  }
+}
