@@ -1,8 +1,15 @@
 // components/DataHandler/CardDataHandler/CardDataHandler.jsx
 
+import { useRef } from "react";
+import { createPortal } from "react-dom";
+
+import ReciboImprimir from "../../pages/ReciboAlquiler/components/ReciboImprimir";
+
 import styles from "./CardDataHandler.module.css";
 
 const CardDataHandler = ({ data }) => {
+  const cardRef = useRef(null);
+
   if (!data) return null;
 
   // =========================
@@ -40,7 +47,7 @@ const CardDataHandler = ({ data }) => {
   // =========================
 
   return (
-    <div className={`montserrat ${styles.card}`}>
+    <div ref={cardRef} className={`montserrat ${styles.card}`}>
       {/* =========================
           HEADER
       ========================= */}
@@ -80,7 +87,7 @@ const CardDataHandler = ({ data }) => {
           <div className={styles.noPadding}>
             <p>
               Alquiler N°
-              {data.id}
+              {data.alquilerId}
             </p>
 
             <p>Importe: ${formatCurrency(data?.importe)}</p>
@@ -88,9 +95,30 @@ const CardDataHandler = ({ data }) => {
             <p>{formatPeriodo(data?.periodo)}</p>
 
             <p>{data?.fecha}</p>
+
+            <button
+              type="button"
+              onClick={() => {
+                document
+                  .querySelectorAll(".recibo-print")
+                  .forEach((el) => el.classList.remove("recibo-print--active"));
+                cardRef.current
+                  ?.querySelector(".recibo-print")
+                  ?.classList.add("recibo-print--active");
+                window.print();
+              }}
+              className={styles.printButton}
+            >
+              Imprimir
+            </button>
           </div>
         )}
       </div>
+
+      {isRecibo && createPortal(
+        <ReciboImprimir form={data} alquiler={data.alquiler} />,
+        document.body
+      )}
     </div>
   );
 };

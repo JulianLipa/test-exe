@@ -108,18 +108,14 @@ button:hover {
     visibility: hidden;
   }
 
-  .recibo-print,
-  .recibo-print * {
+  .recibo-print--active,
+  .recibo-print--active * {
     visibility: visible;
   }
 
-  .recibo-print {
+  .recibo-print--active {
     display: block !important;
-    position: fixed;
-    top: 0;
-    left: 0;
     width: 100%;
-    max-height: 50%;
     color: black;
     font-family: "Montserrat", sans-serif;
   }
@@ -131,9 +127,9 @@ button:hover {
   }
 
   .recibo-print__titulo {
-    font-size: 18px;
+    font-size: 15px;
     font-weight: 700;
-    margin-bottom: 10px;
+    margin-bottom: 4px;
     text-transform: uppercase;
     letter-spacing: 1px;
   }
@@ -141,19 +137,19 @@ button:hover {
   .recibo-print__linea {
     border: none;
     border-top: 1px solid #333;
-    margin: 10px 0;
+    margin: 5px 0;
   }
 
   .recibo-print__datos {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    margin: 10px 0;
+    gap: 1px;
+    margin: 1px 0;
   }
 
   .recibo-print__row {
     display: flex;
-    gap: 12px;
+    gap: 8px;
   }
 
   .recibo-print__label {
@@ -170,8 +166,21 @@ button:hover {
   .recibo-print__importe {
     display: flex;
     justify-content: space-between;
-    margin-top: 10px;
-    font-size: 16px;
+    margin-top: 6px;
+    font-size: 14px;
     font-weight: 700;
+  }
+
+  .recibo-print__separador {
+    height: 12px;
+    border-bottom: 1px dashed #aaa;
+    margin-bottom: 12px;
+  }
+
+  .recibo-print__liquidacion-detalle {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin: 2px 0;
   }
 }

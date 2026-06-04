@@ -45,6 +45,7 @@ const DataHandler = () => {
           ...(recibos || []).map((item) => ({
             ...item,
             type: "recibo",
+            alquiler: (alquileres || []).find((a) => a.id === item.alquilerId) || null,
           })),
         ];
 
@@ -91,7 +92,7 @@ const DataHandler = () => {
       <div className={`flex gap-5 ${styles.container}`}>
         {data.map((item, index) => (
           <CardDataHandler
-            key={`${item.type}-${item.id}-${index}`}
+            key={`${item.type}-${item.id ?? item.alquilerId}-${index}`}
             data={item}
           />
         ))}
