@@ -14,7 +14,7 @@ export default function ReciboImprimir({ form, alquiler }) {
   const neto = importe - honorarios;
 
   return (
-    <div className="recibo-print">
+    <div className="recibo-print" data-recibo-id={form.id || form.alquilerId}>
 
       {/* ── RECIBO ── */}
       <img src={logo} alt="Logo" className="recibo-print__logo" />
@@ -45,6 +45,8 @@ export default function ReciboImprimir({ form, alquiler }) {
 
       {/* ── LIQUIDACION ── */}
       <div className="recibo-print__separador" />
+
+      <img src={logo} alt="Logo" className="recibo-print__logo" />
 
       <hr className="recibo-print__linea" />
 

@@ -14,24 +14,17 @@ import {
   validateForm,
 } from "./form.utils";
 
-export default function NuevoRecibo({ alquiler }) {
+export default function NuevoRecibo({ alquiler, alquilerId }) {
   const navigate = useNavigate();
 
   const [form, setForm] = useState(createInitialForm());
   const [showConfirm, setShowConfirm] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // =========================
-  // AUTOCOMPLETE ID
-  // =========================
   useEffect(() => {
-    if (!alquiler?.id) return;
-
-    setForm((prev) => ({
-      ...prev,
-      id: alquiler.id,
-    }));
-  }, [alquiler]);
+    if (!alquilerId) return;
+    setForm((prev) => ({ ...prev, id: alquilerId }));
+  }, [alquilerId]);
 
   // =========================
   // VALIDATION
@@ -54,6 +47,15 @@ export default function NuevoRecibo({ alquiler }) {
   const handleBack = () => {
     setShowConfirm(true);
   };
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
+      if (e.key === "-") setShowConfirm(true);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const confirmBack = () => {
     navigate("/");
@@ -95,8 +97,13 @@ export default function NuevoRecibo({ alquiler }) {
   // SUCCESS ACTIONS
   // =========================
   const handleImprimir = () => {
-    window.print();
-    navigate("/");
+    const el = document.querySelector(".recibo-print");
+    if (el) el.classList.add("recibo-print--active");
+    setTimeout(() => {
+      window.print();
+      if (el) el.classList.remove("recibo-print--active");
+      navigate("/");
+    }, 50);
   };
 
   const handleVolver = () => {
@@ -106,15 +113,6 @@ export default function NuevoRecibo({ alquiler }) {
   return (
     <>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        {/* ID */}
-        <input
-          type="number"
-          placeholder={formatLabel("id")}
-          value={form.id}
-          onChange={(e) => setField("id", e.target.value)}
-          className="bg-gray-100 border p-2 rounded"
-        />
-
         {/* IMPORTE */}
         <input
           type="text"
@@ -162,7 +160,7 @@ export default function NuevoRecibo({ alquiler }) {
       <ReciboImprimir form={form} alquiler={alquiler} />
 
       {/* MODAL: recibo guardado */}
-      <ConfirmModal open={showSuccess}>
+      <ConfirmModal open={showSuccess} onConfirm={handleImprimir} onCancel={handleVolver}>
         <div className="p-4">
           <p className="mb-4">Recibo guardado correctamente</p>
 
@@ -179,7 +177,7 @@ export default function NuevoRecibo({ alquiler }) {
       </ConfirmModal>
 
       {/* MODAL: confirmar volver */}
-      <ConfirmModal open={showConfirm}>
+      <ConfirmModal open={showConfirm} onConfirm={confirmBack} onCancel={cancelBack}>
         <div className="p-4">
           <p className="mb-4">¿Seguro que querés volver?</p>
 

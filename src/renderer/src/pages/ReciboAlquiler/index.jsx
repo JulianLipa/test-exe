@@ -1,29 +1,23 @@
-// pages/recibos/index.jsx
-
 import { useState } from "react";
-
-import BuscadorAlquiler from "./components/BuscadorAlquiler";
-import ListaResultados from "./components/ListaResultados";
+import AlquilerSelector from "../../components/AlquilerSelector";
 import NuevoRecibo from "./components/NuevoRecibo";
 
 export default function Page() {
-  const [resultados, setResultados] = useState([]);
+  const [alquiler, setAlquiler]     = useState(null);
+  const [alquilerId, setAlquilerId] = useState("");
 
-  const [selectedAlquiler, setSelectedAlquiler] = useState(null);
+  const handleChange = (a, id) => {
+    setAlquiler(a);
+    setAlquilerId(id);
+  };
 
   return (
     <div className="montserrat flex flex-col gap-6">
       <h2 className="text-xl">Ingresar recibo</h2>
 
-      <BuscadorAlquiler setResultados={setResultados} />
+      <AlquilerSelector onChange={handleChange} />
 
-      <ListaResultados
-        resultados={resultados}
-        selectedAlquiler={selectedAlquiler}
-        setSelectedAlquiler={setSelectedAlquiler}
-      />
-
-      <NuevoRecibo alquiler={selectedAlquiler} />
+      <NuevoRecibo alquiler={alquiler} alquilerId={alquilerId} />
     </div>
   );
 }

@@ -115,6 +115,9 @@ button:hover {
 
   .recibo-print--active {
     display: block !important;
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
     color: black;
     font-family: "Montserrat", sans-serif;

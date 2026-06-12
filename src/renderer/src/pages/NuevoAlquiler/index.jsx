@@ -8,7 +8,7 @@ import Section from "./components/Section";
 import FormField from "./components/FormField";
 import ConfirmModal from "../../components/ConfirmModal";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const calculatePeriods = (start, end, intervalMonths) => {
   if (!start || !end || !intervalMonths) return 0;
@@ -31,7 +31,14 @@ const NuevoAlquiler = () => {
   const [showSave, setShowSave] = useState(false);
   const [showCancel, setShowCancel] = useState(false);
 
-  if (!form) return null;
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
+      if (e.key === "-") setShowCancel(true);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -50,9 +57,15 @@ const NuevoAlquiler = () => {
       form.actualizacion_meses,
     );
 
+    const montos = Array.from({ length: periodos }, (_, i) => ({
+      numero: i + 1,
+      monto: null,
+    }));
+
     const data = {
       ...formatForm(form),
       periodos_ajuste: periodos,
+      montos,
     };
 
     const res = await window.store.addItem(data);
@@ -121,7 +134,11 @@ const NuevoAlquiler = () => {
         </div>
       </form>
 
-      <ConfirmModal open={showSave || showCancel}>
+      <ConfirmModal
+        open={showSave || showCancel}
+        onConfirm={showSave ? confirmSave : () => navigate("/")}
+        onCancel={showSave ? () => setShowSave(false) : () => setShowCancel(false)}
+      >
         {showSave && (
           <>
             <p>¿Confirmar guardado?</p>

@@ -1,50 +1,41 @@
-// components/DataHandler/DataHandler.jsx
-
 import { useEffect, useState } from "react";
-
 import CardDataHandler from "./CardDataHandler/CardDataHandler";
-
 import styles from "./CardDataHandler/CardDataHandler.module.css";
 
 const DataHandler = () => {
   const [data, setData] = useState([]);
 
-  // =========================
-  // HELPERS
-  // =========================
-
-  const ordenar = (arr) => {
-    return [...arr].sort(
+  const ordenar = (arr) =>
+    [...arr].sort(
       (a, b) =>
         new Date(b.createdAt || b.fecha || 0) -
-        new Date(a.createdAt || a.fecha || 0),
+        new Date(a.createdAt || a.fecha || 0)
     );
-  };
 
   const getTypeFromFile = (file) => {
-    return file === "data.json" ? "alquiler" : "recibo";
+    if (file === "data.json") return "alquiler";
+    if (file === "recibos-alq.json") return "recibo";
+    if (file === "impuestos.json") return "impuesto";
+    return null;
   };
-
-  // =========================
-  // INITIAL LOAD
-  // =========================
 
   useEffect(() => {
     const loadInitial = async () => {
       try {
         const alquileres = await window.store.loadDB();
-
-        const recibos = await window.store.getRecibos();
+        const recibos    = await window.store.getRecibos();
+        const impuestos  = await window.store.getImpuestos();
 
         const merged = [
-          ...(alquileres || []).map((item) => ({
-            ...item,
-            type: "alquiler",
-          })),
-
-          ...(recibos || []).map((item) => ({
+          ...(alquileres || []).map((item) => ({ ...item, type: "alquiler" })),
+          ...(recibos    || []).map((item) => ({
             ...item,
             type: "recibo",
+            alquiler: (alquileres || []).find((a) => a.id === item.alquilerId) || null,
+          })),
+          ...(impuestos  || []).map((item) => ({
+            ...item,
+            type: "impuesto",
             alquiler: (alquileres || []).find((a) => a.id === item.alquilerId) || null,
           })),
         ];
@@ -57,29 +48,18 @@ const DataHandler = () => {
 
     loadInitial();
 
-    // =========================
-    // REALTIME UPDATES
-    // =========================
-
     const unsubscribe = window.store.onDBUpdate((payload) => {
       setData((prev) => {
         const type = getTypeFromFile(payload.file);
+        if (!type) return prev;
 
-        const existingIds = new Set(
-          prev.map((item) => `${item.type}-${item.id}`),
-        );
+        const existingIds = new Set(prev.map((item) => `${item.type}-${item.id}-${item.createdAt}`));
 
         const nuevos = (payload.data || [])
-          .map((item) => ({
-            ...item,
-            type,
-          }))
-          .filter((item) => !existingIds.has(`${item.type}-${item.id}`));
+          .map((item) => ({ ...item, type }))
+          .filter((item) => !existingIds.has(`${item.type}-${item.id}-${item.createdAt}`));
 
-        if (!nuevos.length) {
-          return prev;
-        }
-
+        if (!nuevos.length) return prev;
         return ordenar([...nuevos, ...prev]);
       });
     });
@@ -92,7 +72,7 @@ const DataHandler = () => {
       <div className={`flex gap-5 ${styles.container}`}>
         {data.map((item, index) => (
           <CardDataHandler
-            key={`${item.type}-${item.id ?? item.alquilerId}-${index}`}
+            key={`${item.type}-${item.alquilerId ?? item.id}-${index}`}
             data={item}
           />
         ))}

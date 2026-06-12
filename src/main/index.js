@@ -160,6 +160,48 @@ app.whenReady().then(() => {
     }
   });
 
+  // =========================
+  // 🧾 IMPUESTOS
+  // =========================
+
+  ipcMain.handle("impuestos:agregar", async (_, nuevoImpuesto) => {
+    try {
+      const dbDir = join(app.getPath("desktop"), "db");
+      const filePath = join(dbDir, "impuestos.json");
+
+      if (!existsSync(dbDir)) {
+        await fs.mkdir(dbDir, { recursive: true });
+      }
+
+      let data = [];
+      if (existsSync(filePath)) {
+        const raw = readFileSync(filePath, "utf-8");
+        data = JSON.parse(raw || "[]");
+      } else {
+        await fs.writeFile(filePath, "[]");
+      }
+
+      const nuevo = { createdAt: new Date().toISOString(), ...nuevoImpuesto };
+      data.push(nuevo);
+      await fs.writeFile(filePath, JSON.stringify(data, null, 2));
+      return { ok: true };
+    } catch (error) {
+      console.error("Error guardando impuesto:", error);
+      return { ok: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle("impuestos:leer", async () => {
+    try {
+      const filePath = join(app.getPath("desktop"), "db", "impuestos.json");
+      if (!existsSync(filePath)) return [];
+      return JSON.parse(readFileSync(filePath, "utf-8") || "[]");
+    } catch (error) {
+      console.error("Error leyendo impuestos:", error);
+      return [];
+    }
+  });
+
   ipcMain.handle("recibos:leer", async () => {
     try {
       const filePath = join(app.getPath("desktop"), "db", "recibos-alq.json");

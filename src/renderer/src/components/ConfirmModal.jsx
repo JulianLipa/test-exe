@@ -1,4 +1,16 @@
-const ConfirmModal = ({ open, children }) => {
+import { useEffect } from "react";
+
+const ConfirmModal = ({ open, onConfirm, onCancel, children }) => {
+  useEffect(() => {
+    if (!open) return;
+    const handleKey = (e) => {
+      if (e.key === "Enter" && onConfirm) { e.preventDefault(); onConfirm(); }
+      if (e.key === "Escape" && onCancel) onCancel();
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [open, onConfirm, onCancel]);
+
   if (!open) return null;
 
   return (

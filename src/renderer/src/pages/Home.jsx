@@ -1,17 +1,23 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import DataHandler from "../components/DataHandler.jsx";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
-function App() {
-  const [data, setData] = useState([]);
+const ROUTES = { "1": "/nuevoAlquiler", "2": "/listadoAlquiler", "3": "/recibo", "4": "/impuestos" };
+
+function Home() {
+  const navigate = useNavigate();
+  const navRef = useRef(navigate);
+
+  useEffect(() => { navRef.current = navigate; });
 
   useEffect(() => {
-    const load = async () => {
-      const db = await window.store.loadDB();
-      setData(db || []);
+    const onKey = (e) => {
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
+      const route = ROUTES[e.key];
+      if (route) navRef.current(route);
     };
-
-    load();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, []);
 
   return (
@@ -26,9 +32,10 @@ function App() {
         <Link to="/nuevoAlquiler">[1] Alta Alquiler</Link>
         <Link to="/listadoAlquiler">[2] Listado alquileres</Link>
         <Link to="/recibo">[3] Recibo</Link>
+        <Link to="/impuestos">[4] Impuestos</Link>
       </div>
     </div>
   );
 }
 
-export default App;
+export default Home;

@@ -63,6 +63,13 @@ const store = {
   getRecibos: () => ipcRenderer.invoke("recibos:leer"),
 
   // =========================
+  // 🧾 IMPUESTOS
+  // =========================
+
+  addImpuesto: (impuesto) => ipcRenderer.invoke("impuestos:agregar", impuesto),
+  getImpuestos: () => ipcRenderer.invoke("impuestos:leer"),
+
+  // =========================
   // 👀 WATCH DB (NUEVO)
   // =========================
 
