@@ -1,4 +1,4 @@
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { formConfig } from "./config/formConfig";
 import { useNuevoAlquiler } from "./useNuevoAlquiler";
 import { updateNestedValue } from "./utils/updateNestedValue";
@@ -26,7 +26,10 @@ const calculatePeriods = (start, end, intervalMonths) => {
 
 const NuevoAlquiler = () => {
   const navigate = useNavigate();
-  const { form, setForm } = useNuevoAlquiler();
+  const location = useLocation();
+  const editId = location.state?.editId ?? null;
+  const isEditing = editId != null;
+  const { form, setForm, loading } = useNuevoAlquiler(editId);
 
   const [showSave, setShowSave] = useState(false);
   const [showCancel, setShowCancel] = useState(false);
@@ -57,10 +60,14 @@ const NuevoAlquiler = () => {
       form.actualizacion_meses,
     );
 
-    const montos = Array.from({ length: periodos }, (_, i) => ({
-      numero: i + 1,
-      monto: null,
-    }));
+    // Si ya existían montos ingresados (edición), se preservan por número
+    // en vez de reiniciarlos en null.
+    const existingMontos = Array.isArray(form.montos) ? form.montos : [];
+    const montos = Array.from({ length: periodos }, (_, i) => {
+      const numero = i + 1;
+      const previo = existingMontos.find((m) => m.numero === numero);
+      return { numero, monto: previo ? previo.monto : null };
+    });
 
     const data = {
       ...formatForm(form),
@@ -68,9 +75,11 @@ const NuevoAlquiler = () => {
       montos,
     };
 
-    const res = await window.store.addItem(data);
+    const res = isEditing
+      ? await window.store.updateItem(data)
+      : await window.store.addItem(data);
 
-    if (res.ok) navigate("/");
+    if (res.ok) navigate(isEditing ? "/listadoAlquiler" : "/");
   };
 
   const periodosPreview = calculatePeriods(
@@ -79,9 +88,18 @@ const NuevoAlquiler = () => {
     form.actualizacion_meses,
   );
 
+  if (loading) {
+    return (
+      <div>
+        <h2>Editar Alquiler</h2>
+        <p>Cargando datos del contrato...</p>
+      </div>
+    );
+  }
+
   return (
     <div>
-      <h2>Nuevo Alquiler</h2>
+      <h2>{isEditing ? "Editar Alquiler" : "Nuevo Alquiler"}</h2>
 
       <form onSubmit={handleSubmit} className="pb-5">
         <input name="id" value={form.id} readOnly />
@@ -136,7 +154,7 @@ const NuevoAlquiler = () => {
 
       <ConfirmModal
         open={showSave || showCancel}
-        onConfirm={showSave ? confirmSave : () => navigate("/")}
+        onConfirm={showSave ? confirmSave : () => navigate(isEditing ? "/listadoAlquiler" : "/")}
         onCancel={showSave ? () => setShowSave(false) : () => setShowCancel(false)}
       >
         {showSave && (
@@ -157,7 +175,7 @@ const NuevoAlquiler = () => {
           <div className="flex flex-col gap-2">
             <p>¿Seguro que querés Cancelar?</p>
             <div className="flex gap-2">
-              <Link to="/" className="buttonBlack">
+              <Link to={isEditing ? "/listadoAlquiler" : "/"} className="buttonBlack">
                 Sí
               </Link>
               <button className="" onClick={() => setShowCancel(false)}>

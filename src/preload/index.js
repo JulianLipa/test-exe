@@ -29,6 +29,18 @@ const store = {
     return res;
   },
 
+  updateItem: async (item) => {
+    const res = await ipcRenderer.invoke("db:actualizar", item);
+    if (res?.ok) {
+      const idx = state.data.findIndex((d) => String(d.id) === String(item.id));
+      if (idx !== -1) state.data[idx] = { ...state.data[idx], ...item };
+    }
+    return res;
+  },
+
+  updateMonto: (alquilerId, numero, monto) =>
+    ipcRenderer.invoke("db:actualizarMonto", { alquilerId, numero, monto }),
+
   refresh: async () => {
     const db = await ipcRenderer.invoke("db:leer");
     state.data = db || [];

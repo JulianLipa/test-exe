@@ -122,6 +122,51 @@ app.whenReady().then(() => {
     }
   });
 
+  ipcMain.handle("db:actualizar", async (event, itemActualizado) => {
+    try {
+      const dbPath = join(app.getPath("desktop"), "db", "data.json");
+      if (!existsSync(dbPath)) return { ok: false, error: "DB no encontrada" };
+
+      const data = JSON.parse(readFileSync(dbPath, "utf-8"));
+      const index = data.findIndex(
+        (item) => String(item.id) === String(itemActualizado.id),
+      );
+      if (index === -1) return { ok: false, error: "Alquiler no encontrado" };
+
+      data[index] = { ...data[index], ...itemActualizado };
+      await fs.writeFile(dbPath, JSON.stringify(data, null, 2));
+
+      return { ok: true };
+    } catch (error) {
+      console.error("Error actualizando dato:", error);
+      return { ok: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle("db:actualizarMonto", async (event, { alquilerId, numero, monto }) => {
+    try {
+      const dbPath = join(app.getPath("desktop"), "db", "data.json");
+      if (!existsSync(dbPath)) return { ok: false, error: "DB no encontrada" };
+
+      const data = JSON.parse(readFileSync(dbPath, "utf-8"));
+      const item = data.find((e) => String(e.id) === String(alquilerId));
+      if (!item || !Array.isArray(item.montos)) {
+        return { ok: false, error: "Alquiler no encontrado" };
+      }
+
+      const montoItem = item.montos.find((m) => Number(m.numero) === Number(numero));
+      if (!montoItem) return { ok: false, error: "Monto no encontrado" };
+
+      montoItem.monto = monto;
+      await fs.writeFile(dbPath, JSON.stringify(data, null, 2));
+
+      return { ok: true };
+    } catch (error) {
+      console.error("Error actualizando monto:", error);
+      return { ok: false, error: error.message };
+    }
+  });
+
   // =========================
   // 🧾 RECIBOS
   // =========================

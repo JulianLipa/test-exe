@@ -12,46 +12,30 @@ const fmtDate = (value) => {
   return new Date(value + "T00:00:00").toLocaleDateString("es-AR");
 };
 
-const COLS = [
-  { label: "N°",         render: (a) => a.id },
-  { label: "Locador",    render: (a) => `${a.locador?.apellido || "-"}, ${a.locador?.nombre || "-"}` },
-  { label: "Locatario",  render: (a) => `${a.locatario?.apellido || "-"}, ${a.locatario?.nombre || "-"}` },
-  { label: "Inmueble",   render: (a) => a.inmueble?.direccion || "-" },
-  { label: "Inicio",     render: (a) => fmtDate(a.fecha_inicio) },
-  { label: "Fin",        render: (a) => fmtDate(a.fecha_fin) },
-  {
-    label: "Montos",
-    render: (a) => {
-      if (!a.montos?.length) return `$${fmt(a.monto_inicial)}`;
-      return (
-        <select
-          style={{
-            background: "rgba(237,242,248,0.08)",
-            color: "rgb(237,242,248)",
-            border: "1px solid rgba(237,242,248,0.2)",
-            borderRadius: "0.4em",
-            padding: "4px 8px",
-            fontSize: "0.88em",
-            cursor: "pointer",
-          }}
-        >
-          {a.montos.map((m) => (
-            <option key={m.numero} value={m.numero} style={{ color: "rgb(14,25,37)" }}>
-              {m.monto != null ? `Monto N°${m.numero}  $${fmt(m.monto)}` : `Monto N°${m.numero}  -`}
-            </option>
-          ))}
-        </select>
-      );
-    },
-  },
-  { label: "Honorario",  render: (a) => a.honorario ? `${a.honorario}%` : "-" },
-  { label: "Índice",     render: (a) => a.indice || "-" },
-  { label: "Actualiz.",  render: (a) => a.actualizacion_meses ? `${a.actualizacion_meses}m` : "-" },
-];
+const selectStyle = {
+  background: "rgba(237,242,248,0.08)",
+  color: "rgb(237,242,248)",
+  border: "1px solid rgba(237,242,248,0.2)",
+  borderRadius: "0.4em",
+  padding: "4px 8px",
+  fontSize: "0.88em",
+  cursor: "pointer",
+};
+
+const inputStyle = {
+  background: "rgba(237,242,248,0.08)",
+  color: "rgb(237,242,248)",
+  border: "1px solid rgba(237,242,248,0.2)",
+  borderRadius: "0.4em",
+  padding: "4px 8px",
+  fontSize: "0.88em",
+  width: "100px",
+};
 
 export default function ListadoAlquileres() {
   const [data, setData] = useState([]);
   const [showVolver, setShowVolver] = useState(false);
+  const [montoEdits, setMontoEdits] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -77,6 +61,105 @@ export default function ListadoAlquileres() {
     };
     getData();
   }, []);
+
+  // Precarga el monto seleccionado (o el primero) para cada alquiler.
+  const getMontoEdit = (a) => {
+    const edit = montoEdits[a.id];
+    if (edit) return edit;
+    const primero = a.montos?.[0];
+    return { numero: primero?.numero ?? "", value: primero?.monto ?? "" };
+  };
+
+  const handleMontoSelect = (a, numero) => {
+    const encontrado = a.montos.find((m) => String(m.numero) === String(numero));
+    setMontoEdits((prev) => ({
+      ...prev,
+      [a.id]: { numero, value: encontrado?.monto ?? "" },
+    }));
+  };
+
+  const handleMontoValueChange = (a, value) => {
+    setMontoEdits((prev) => ({
+      ...prev,
+      [a.id]: { ...getMontoEdit(a), value },
+    }));
+  };
+
+  const handleMontoSave = async (a) => {
+    const edit = getMontoEdit(a);
+    if (!edit.numero) return;
+    try {
+      const res = await window.store.updateMonto(a.id, Number(edit.numero), Number(edit.value));
+      if (!res?.ok) { alert("Error al guardar el monto"); return; }
+      setData((prev) =>
+        prev.map((item) =>
+          item.id === a.id
+            ? {
+                ...item,
+                montos: item.montos.map((m) =>
+                  m.numero === Number(edit.numero) ? { ...m, monto: Number(edit.value) } : m,
+                ),
+              }
+            : item,
+        ),
+      );
+    } catch (err) {
+      console.error(err);
+      alert("Error al guardar el monto");
+    }
+  };
+
+  const COLS = [
+    { label: "N°",         render: (a) => a.id },
+    { label: "Locador",    render: (a) => `${a.locador?.apellido || "-"}, ${a.locador?.nombre || "-"}` },
+    { label: "Locatario",  render: (a) => `${a.locatario?.apellido || "-"}, ${a.locatario?.nombre || "-"}` },
+    { label: "Inmueble",   render: (a) => a.inmueble?.direccion || "-" },
+    { label: "Inicio",     render: (a) => fmtDate(a.fecha_inicio) },
+    { label: "Fin",        render: (a) => fmtDate(a.fecha_fin) },
+    {
+      label: "Montos",
+      render: (a) => {
+        if (!a.montos?.length) return `$${fmt(a.monto_inicial)}`;
+        const edit = getMontoEdit(a);
+        return (
+          <div className="flex items-center gap-2">
+            <select
+              style={selectStyle}
+              value={edit.numero}
+              onChange={(e) => handleMontoSelect(a, e.target.value)}
+            >
+              {a.montos.map((m) => (
+                <option key={m.numero} value={m.numero} style={{ color: "rgb(14,25,37)" }}>
+                  {`Monto N°${m.numero}`}
+                </option>
+              ))}
+            </select>
+            <input
+              type="number"
+              style={inputStyle}
+              value={edit.value}
+              placeholder="Monto"
+              onChange={(e) => handleMontoValueChange(a, e.target.value)}
+            />
+            <button type="button" onClick={() => handleMontoSave(a)}>
+              Guardar
+            </button>
+          </div>
+        );
+      },
+    },
+    { label: "Honorario",  render: (a) => a.honorario ? `${a.honorario}%` : "-" },
+    { label: "Índice",     render: (a) => a.indice || "-" },
+    { label: "Actualiz.",  render: (a) => a.actualizacion_meses ? `${a.actualizacion_meses}m` : "-" },
+    {
+      label: "Editar",
+      render: (a) => (
+        <Link to="/nuevoAlquiler" state={{ editId: a.id }}>
+          <button type="button">Editar</button>
+        </Link>
+      ),
+    },
+  ];
 
   return (
     <div className="montserrat flex flex-col gap-5">

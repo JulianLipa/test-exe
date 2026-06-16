@@ -2,7 +2,14 @@ import { useEffect, useRef } from "react";
 import DataHandler from "../components/DataHandler.jsx";
 import { Link, useNavigate } from "react-router-dom";
 
-const ROUTES = { "1": "/nuevoAlquiler", "2": "/listadoAlquiler", "3": "/recibo", "4": "/impuestos" };
+const ROUTES = {
+  "1": "/nuevoAlquiler",
+  "2": "/recibo",
+  "3": "/impuestos",
+  "4": "/listadoAlquiler",
+  "5": "/listadoRecibos",
+  "6": "/listadoImpuestos",
+};
 
 function Home() {
   const navigate = useNavigate();
@@ -30,9 +37,16 @@ function Home() {
 
       <div className="flex gap-5">
         <Link to="/nuevoAlquiler">[1] Alta Alquiler</Link>
-        <Link to="/listadoAlquiler">[2] Listado alquileres</Link>
-        <Link to="/recibo">[3] Recibo</Link>
-        <Link to="/impuestos">[4] Impuestos</Link>
+        <Link to="/recibo">[2] Recibo</Link>
+        <Link to="/impuestos">[3] Impuestos</Link>
+      </div>
+
+      <h2 className="mt-10 mb-2">Ver</h2>
+
+      <div className="flex gap-5">
+        <Link to="/listadoAlquiler">[4] Listado alquileres</Link>
+        <Link to="/listadoRecibos">[5] Listado recibos</Link>
+        <Link to="/listadoImpuestos">[6] Listado impuestos</Link>
       </div>
     </div>
   );
