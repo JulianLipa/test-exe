@@ -247,6 +247,42 @@ app.whenReady().then(() => {
     }
   });
 
+  // =========================
+  // 🌸 PAPEL ROSA
+  // =========================
+
+  ipcMain.handle("papel-rosa:agregar", async (_, nuevo) => {
+    try {
+      const dbDir = join(app.getPath("desktop"), "db");
+      const filePath = join(dbDir, "papeles-rosa.json");
+      if (!existsSync(dbDir)) await fs.mkdir(dbDir, { recursive: true });
+      let data = [];
+      if (existsSync(filePath)) {
+        const raw = readFileSync(filePath, "utf-8");
+        data = JSON.parse(raw || "[]");
+      } else {
+        await fs.writeFile(filePath, "[]");
+      }
+      data.push({ createdAt: new Date().toISOString(), ...nuevo });
+      await fs.writeFile(filePath, JSON.stringify(data, null, 2));
+      return { ok: true };
+    } catch (error) {
+      console.error("Error guardando papel rosa:", error);
+      return { ok: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle("papel-rosa:leer", async () => {
+    try {
+      const filePath = join(app.getPath("desktop"), "db", "papeles-rosa.json");
+      if (!existsSync(filePath)) return [];
+      return JSON.parse(readFileSync(filePath, "utf-8") || "[]");
+    } catch (error) {
+      console.error("Error leyendo papel rosa:", error);
+      return [];
+    }
+  });
+
   ipcMain.handle("recibos:leer", async () => {
     try {
       const filePath = join(app.getPath("desktop"), "db", "recibos-alq.json");

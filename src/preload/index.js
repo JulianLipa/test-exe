@@ -82,6 +82,13 @@ const store = {
   getImpuestos: () => ipcRenderer.invoke("impuestos:leer"),
 
   // =========================
+  // 🌸 PAPEL ROSA
+  // =========================
+
+  addPapelRosa: (item) => ipcRenderer.invoke("papel-rosa:agregar", item),
+  getPapelRosa: () => ipcRenderer.invoke("papel-rosa:leer"),
+
+  // =========================
   // 👀 WATCH DB (NUEVO)
   // =========================
 

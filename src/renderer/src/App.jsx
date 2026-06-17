@@ -6,6 +6,8 @@ import ListadoAlquiler from "./pages/ListadoAlquileres/ListadoAlquileres.jsx";
 import Impuestos from "./pages/Impuestos/index.jsx";
 import ListadoRecibos from "./pages/ListadoRecibos/ListadoRecibos.jsx";
 import ListadoImpuestos from "./pages/ListadoImpuestos/ListadoImpuestos.jsx";
+import PapelRosa from "./pages/PapelRosa/PapelRosa.jsx";
+import ListadoPapelRosa from "./pages/ListadoPapelRosa/ListadoPapelRosa.jsx";
 
 function App() {
   return (
@@ -18,6 +20,8 @@ function App() {
         <Route path="/impuestos" element={<Impuestos />} />
         <Route path="/listadoRecibos" element={<ListadoRecibos />} />
         <Route path="/listadoImpuestos" element={<ListadoImpuestos />} />
+        <Route path="/papelRosa" element={<PapelRosa />} />
+        <Route path="/listadoPapelRosa" element={<ListadoPapelRosa />} />
       </Routes>
     </HashRouter>
   );

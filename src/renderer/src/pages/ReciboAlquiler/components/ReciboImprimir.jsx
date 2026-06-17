@@ -1,5 +1,5 @@
 import { formatCurrency } from "./form.utils";
-import logo from "../../../imgs/LOGOTIPO-NEGATIVO-BG.svg";
+import PrintHeader from "../../../components/PrintHeader";
 
 export default function ReciboImprimir({ form, alquiler }) {
   if (!alquiler) return null;
@@ -17,7 +17,7 @@ export default function ReciboImprimir({ form, alquiler }) {
     <div className="recibo-print" data-recibo-id={form.id || form.alquilerId}>
 
       {/* ── RECIBO ── */}
-      <img src={logo} alt="Logo" className="recibo-print__logo" />
+      <PrintHeader />
 
       <hr className="recibo-print__linea" />
 
@@ -46,7 +46,7 @@ export default function ReciboImprimir({ form, alquiler }) {
       {/* ── LIQUIDACION ── */}
       <div className="recibo-print__separador" />
 
-      <img src={logo} alt="Logo" className="recibo-print__logo" />
+      <PrintHeader />
 
       <hr className="recibo-print__linea" />
 

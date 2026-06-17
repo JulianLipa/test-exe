@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ConfirmModal from "../../components/ConfirmModal";
 
 const fmt = (value) => {
@@ -32,11 +32,61 @@ const inputStyle = {
   width: "100px",
 };
 
+const thBase = {
+  padding: "10px 14px",
+  textAlign: "left",
+  borderBottom: "1px solid rgba(237,242,248,0.2)",
+  color: "rgba(237,242,248,0.5)",
+  fontWeight: 600,
+  fontSize: "0.78em",
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+  whiteSpace: "nowrap",
+  userSelect: "none",
+};
+
+const tdStyle = {
+  padding: "10px 14px",
+  color: "rgb(237,242,248)",
+  fontWeight: 500,
+  fontSize: "0.9em",
+  whiteSpace: "nowrap",
+};
+
+// ── tipos de filtro por columna ───────────────────────────────────────────────
+// "sort"   → alterna asc/desc al hacer click
+// "search" → muestra un input de texto debajo del header
+// "none"   → sin filtro
+
+const COLS = [
+  { key: "id",              label: "N°",              filter: "sort",   getValue: (a) => a.id },
+  { key: "locador_ap",     label: "Locador Ap.",      filter: "search", getValue: (a) => a.locador?.apellido || "" },
+  { key: "locador_nom",    label: "Locador Nom.",     filter: "search", getValue: (a) => a.locador?.nombre   || "" },
+  { key: "locatario_ap",   label: "Locatario Ap.",    filter: "search", getValue: (a) => a.locatario?.apellido || "" },
+  { key: "locatario_nom",  label: "Locatario Nom.",   filter: "search", getValue: (a) => a.locatario?.nombre   || "" },
+  { key: "inmueble",       label: "Inmueble",         filter: "none",   getValue: (a) => a.inmueble?.direccion || "-" },
+  { key: "fecha_inicio",   label: "Inicio",           filter: "sort",   getValue: (a) => a.fecha_inicio || "" },
+  { key: "fecha_fin",      label: "Fin",              filter: "sort",   getValue: (a) => a.fecha_fin    || "" },
+  { key: "montos",         label: "Montos",           filter: "none",   getValue: null },
+  { key: "honorario",      label: "Honorario",        filter: "none",   getValue: (a) => a.honorario ? `${a.honorario}%` : "-" },
+  { key: "indice",         label: "Índice",           filter: "none",   getValue: (a) => a.indice || "-" },
+  { key: "actualizacion",  label: "Actualiz.",        filter: "none",   getValue: (a) => a.actualizacion_meses ? `${a.actualizacion_meses}m` : "-" },
+  { key: "editar",         label: "Editar",           filter: "none",   getValue: null },
+];
+
+const initialSorts  = Object.fromEntries(COLS.filter((c) => c.filter === "sort").map((c) => [c.key, null]));
+const initialSearch = Object.fromEntries(COLS.filter((c) => c.filter === "search").map((c) => [c.key, ""]));
+
 export default function ListadoAlquileres() {
-  const [data, setData] = useState([]);
+  const [data, setData]           = useState([]);
   const [showVolver, setShowVolver] = useState(false);
   const [montoEdits, setMontoEdits] = useState({});
+  // sortOrder: array de { key, dir } en orden de prioridad (primero = más importante)
+  const [sortOrder, setSortOrder] = useState([]);
+  const [searches, setSearches]   = useState(initialSearch);
   const navigate = useNavigate();
+  const navRef   = useRef(navigate);
+  useEffect(() => { navRef.current = navigate; });
 
   useEffect(() => {
     const onKey = (e) => {
@@ -62,7 +112,8 @@ export default function ListadoAlquileres() {
     getData();
   }, []);
 
-  // Precarga el monto seleccionado (o el primero) para cada alquiler.
+  // ── monto helpers ─────────────────────────────────────────────────────────
+
   const getMontoEdit = (a) => {
     const edit = montoEdits[a.id];
     if (edit) return edit;
@@ -72,17 +123,11 @@ export default function ListadoAlquileres() {
 
   const handleMontoSelect = (a, numero) => {
     const encontrado = a.montos.find((m) => String(m.numero) === String(numero));
-    setMontoEdits((prev) => ({
-      ...prev,
-      [a.id]: { numero, value: encontrado?.monto ?? "" },
-    }));
+    setMontoEdits((prev) => ({ ...prev, [a.id]: { numero, value: encontrado?.monto ?? "" } }));
   };
 
   const handleMontoValueChange = (a, value) => {
-    setMontoEdits((prev) => ({
-      ...prev,
-      [a.id]: { ...getMontoEdit(a), value },
-    }));
+    setMontoEdits((prev) => ({ ...prev, [a.id]: { ...getMontoEdit(a), value } }));
   };
 
   const handleMontoSave = async (a) => {
@@ -94,14 +139,9 @@ export default function ListadoAlquileres() {
       setData((prev) =>
         prev.map((item) =>
           item.id === a.id
-            ? {
-                ...item,
-                montos: item.montos.map((m) =>
-                  m.numero === Number(edit.numero) ? { ...m, monto: Number(edit.value) } : m,
-                ),
-              }
-            : item,
-        ),
+            ? { ...item, montos: item.montos.map((m) => m.numero === Number(edit.numero) ? { ...m, monto: Number(edit.value) } : m) }
+            : item
+        )
       );
     } catch (err) {
       console.error(err);
@@ -109,57 +149,90 @@ export default function ListadoAlquileres() {
     }
   };
 
-  const COLS = [
-    { label: "N°",         render: (a) => a.id },
-    { label: "Locador",    render: (a) => `${a.locador?.apellido || "-"}, ${a.locador?.nombre || "-"}` },
-    { label: "Locatario",  render: (a) => `${a.locatario?.apellido || "-"}, ${a.locatario?.nombre || "-"}` },
-    { label: "Inmueble",   render: (a) => a.inmueble?.direccion || "-" },
-    { label: "Inicio",     render: (a) => fmtDate(a.fecha_inicio) },
-    { label: "Fin",        render: (a) => fmtDate(a.fecha_fin) },
-    {
-      label: "Montos",
-      render: (a) => {
-        if (!a.montos?.length) return `$${fmt(a.monto_inicial)}`;
-        const edit = getMontoEdit(a);
-        return (
-          <div className="flex items-center gap-2">
-            <select
-              style={selectStyle}
-              value={edit.numero}
-              onChange={(e) => handleMontoSelect(a, e.target.value)}
-            >
-              {a.montos.map((m) => (
-                <option key={m.numero} value={m.numero} style={{ color: "rgb(14,25,37)" }}>
-                  {`Monto N°${m.numero}`}
-                </option>
-              ))}
-            </select>
-            <input
-              type="number"
-              style={inputStyle}
-              value={edit.value}
-              placeholder="Monto"
-              onChange={(e) => handleMontoValueChange(a, e.target.value)}
-            />
-            <button type="button" onClick={() => handleMontoSave(a)}>
-              Guardar
-            </button>
-          </div>
-        );
-      },
-    },
-    { label: "Honorario",  render: (a) => a.honorario ? `${a.honorario}%` : "-" },
-    { label: "Índice",     render: (a) => a.indice || "-" },
-    { label: "Actualiz.",  render: (a) => a.actualizacion_meses ? `${a.actualizacion_meses}m` : "-" },
-    {
-      label: "Editar",
-      render: (a) => (
-        <Link to="/nuevoAlquiler" state={{ editId: a.id }}>
-          <button type="button">Editar</button>
-        </Link>
-      ),
-    },
-  ];
+  // ── filtros ───────────────────────────────────────────────────────────────
+
+  // Click: asc → desc → quitar. Si no estaba, se agrega al final (menor prioridad).
+  const handleSortClick = (key) => {
+    setSortOrder((prev) => {
+      const existing = prev.find((s) => s.key === key);
+      if (!existing) return [...prev, { key, dir: "asc" }];
+      if (existing.dir === "asc") return prev.map((s) => s.key === key ? { ...s, dir: "desc" } : s);
+      return prev.filter((s) => s.key !== key);
+    });
+  };
+
+  const handleSearchChange = (key, val) => {
+    setSearches((prev) => ({ ...prev, [key]: val }));
+  };
+
+  // aplicar búsquedas de texto
+  let rows = data.filter((a) =>
+    COLS.filter((c) => c.filter === "search").every((c) => {
+      const q = searches[c.key].trim().toLowerCase();
+      if (!q) return true;
+      return c.getValue(a).toLowerCase().includes(q);
+    })
+  );
+
+  // aplicar ordenamientos en orden de prioridad (el primero clickeado es el primario)
+  if (sortOrder.length) {
+    const colMap = Object.fromEntries(COLS.map((c) => [c.key, c]));
+    rows = [...rows].sort((a, b) => {
+      for (const { key, dir } of sortOrder) {
+        const col = colMap[key];
+        if (!col?.getValue) continue;
+        const cmp = String(col.getValue(a)).localeCompare(String(col.getValue(b)), "es", { numeric: true });
+        if (cmp !== 0) return dir === "asc" ? cmp : -cmp;
+      }
+      return 0;
+    });
+  }
+
+  // ── render ────────────────────────────────────────────────────────────────
+
+  const renderCell = (col, item) => {
+    if (col.key === "montos") {
+      if (!item.montos?.length) return `$${fmt(item.monto_inicial)}`;
+      const edit = getMontoEdit(item);
+      return (
+        <div className="flex items-center gap-2">
+          <select style={selectStyle} value={edit.numero} onChange={(e) => handleMontoSelect(item, e.target.value)}>
+            {item.montos.map((m) => (
+              <option key={m.numero} value={m.numero} style={{ color: "rgb(14,25,37)" }}>
+                {`Monto N°${m.numero}`}
+              </option>
+            ))}
+          </select>
+          <input
+            type="number"
+            style={inputStyle}
+            value={edit.value}
+            placeholder="Monto"
+            onChange={(e) => handleMontoValueChange(item, e.target.value)}
+          />
+          <button type="button" onClick={() => handleMontoSave(item)}>Guardar</button>
+        </div>
+      );
+    }
+    if (col.key === "editar") {
+      return (
+        <button type="button" onClick={() => navRef.current("/nuevoAlquiler", { state: { editId: item.id } })}>
+          Editar
+        </button>
+      );
+    }
+    if (col.key === "fecha_inicio") return fmtDate(item.fecha_inicio);
+    if (col.key === "fecha_fin")    return fmtDate(item.fecha_fin);
+    return col.getValue ? col.getValue(item) || "-" : "-";
+  };
+
+  const sortIcon = (key) => {
+    const s = sortOrder.find((x) => x.key === key);
+    const idx = sortOrder.findIndex((x) => x.key === key);
+    if (!s) return " ↕";
+    const num = sortOrder.length > 1 ? `${idx + 1}` : "";
+    return s.dir === "asc" ? ` ↑${num}` : ` ↓${num}`;
+  };
 
   return (
     <div className="montserrat flex flex-col gap-5">
@@ -168,15 +241,11 @@ export default function ListadoAlquileres() {
         <h2>Listado de alquileres</h2>
       </div>
 
-      <ConfirmModal
-        open={showVolver}
-        onConfirm={() => navigate("/")}
-        onCancel={() => setShowVolver(false)}
-      >
+      <ConfirmModal open={showVolver} onConfirm={() => navRef.current("/")} onCancel={() => setShowVolver(false)}>
         <div className="p-4">
           <p className="mb-4">¿Seguro que querés volver al menú?</p>
           <div className="flex gap-2">
-            <button onClick={() => navigate("/")} className="buttonBlack">Sí</button>
+            <button onClick={() => navRef.current("/")} className="buttonBlack">Sí</button>
             <button onClick={() => setShowVolver(false)}>Cancelar</button>
           </div>
         </div>
@@ -191,52 +260,44 @@ export default function ListadoAlquileres() {
               <tr>
                 {COLS.map((col) => (
                   <th
-                    key={col.label}
+                    key={col.key}
                     style={{
-                      padding: "10px 14px",
-                      textAlign: "left",
-                      borderBottom: "1px solid rgba(237,242,248,0.2)",
-                      color: "rgba(237,242,248,0.5)",
-                      fontWeight: 600,
-                      fontSize: "0.78em",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                      whiteSpace: "nowrap",
+                      ...thBase,
+                      cursor: col.filter !== "none" ? "pointer" : "default",
                     }}
+                    onClick={() => col.filter === "sort" && handleSortClick(col.key)}
                   >
                     {col.label}
+                    {col.filter === "sort" && sortIcon(col.key)}
                   </th>
+                ))}
+              </tr>
+              <tr>
+                {COLS.map((col) => (
+                  <td key={col.key} style={{ padding: "4px 14px 8px" }}>
+                    {col.filter === "search" && (
+                      <input
+                        type="text"
+                        value={searches[col.key]}
+                        onChange={(e) => handleSearchChange(col.key, e.target.value)}
+                        placeholder="Buscar…"
+                        style={{ ...inputStyle, width: "100%", minWidth: 80 }}
+                      />
+                    )}
+                  </td>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {data.map((item, i) => (
+              {rows.map((item, i) => (
                 <tr
                   key={item.id ?? i}
-                  style={{
-                    borderBottom: "1px solid rgba(237,242,248,0.08)",
-                    transition: "background 0.15s",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background = "rgba(237,242,248,0.05)")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "transparent")
-                  }
+                  style={{ borderBottom: "1px solid rgba(237,242,248,0.08)", transition: "background 0.15s" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(237,242,248,0.05)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                 >
                   {COLS.map((col) => (
-                    <td
-                      key={col.label}
-                      style={{
-                        padding: "10px 14px",
-                        color: "rgb(237,242,248)",
-                        fontWeight: 500,
-                        fontSize: "0.9em",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {col.render(item)}
-                    </td>
+                    <td key={col.key} style={tdStyle}>{renderCell(col, item)}</td>
                   ))}
                 </tr>
               ))}

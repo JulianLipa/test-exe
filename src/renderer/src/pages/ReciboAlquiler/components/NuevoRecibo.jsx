@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import ConfirmModal from "../../../components/ConfirmModal";
 import ReciboImprimir from "./ReciboImprimir";
+import PrinterIcon from "../../../components/PrinterIcon";
 
 import { createInitialForm } from "./form.config";
 
@@ -166,7 +167,7 @@ export default function NuevoRecibo({ alquiler, alquilerId }) {
 
           <div className="flex gap-2">
             <button onClick={handleImprimir} className="buttonBlack">
-              Imprimir recibo
+              <PrinterIcon /> Imprimir recibo
             </button>
 
             <button onClick={handleVolver}>

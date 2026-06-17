@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import ConfirmModal from "../../components/ConfirmModal";
 import AlquilerSelector from "../../components/AlquilerSelector";
 import ImpuestosImprimir from "./ImpuestosImprimir";
+import PrinterIcon from "../../components/PrinterIcon";
 
 const FIELDS = [
   { key: "aysaVto",         label: "AYSA VTO" },
@@ -49,7 +50,7 @@ export default function Impuestos() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!alquilerId) { alert("Seleccioná un inquilino"); return; }
+    if (!alquilerId) { alert("Seleccioná un locatario"); return; }
     setShowConfirm(true);
   };
 
@@ -146,7 +147,7 @@ export default function Impuestos() {
         <div className="p-4">
           <p className="mb-4">Impuestos guardados correctamente</p>
           <div className="flex gap-2">
-            <button onClick={handleImprimir} className="buttonBlack">Imprimir</button>
+            <button onClick={handleImprimir} className="buttonBlack"><PrinterIcon /> Imprimir</button>
             <button onClick={handleNuevo}>Ingresar otro</button>
             <button onClick={() => navRef.current("/")}>Menú principal</button>
           </div>

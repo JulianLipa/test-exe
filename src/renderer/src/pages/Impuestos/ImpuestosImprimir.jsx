@@ -1,4 +1,4 @@
-import logo from "../../imgs/LOGOTIPO-NEGATIVO-BG.svg";
+import PrintHeader from "../../components/PrintHeader";
 
 const LABELS = {
   aysaVto:         "AYSA VTO",
@@ -28,7 +28,7 @@ function Copia({ form, alquiler, alquilerId }) {
 
   return (
     <>
-      <img src={logo} alt="Logo" className="recibo-print__logo" />
+      <PrintHeader />
 
       <hr className="recibo-print__linea" />
 

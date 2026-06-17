@@ -2,6 +2,9 @@ import { createPortal } from "react-dom";
 
 import ReciboImprimir from "../../pages/ReciboAlquiler/components/ReciboImprimir";
 import ImpuestosImprimir from "../../pages/Impuestos/ImpuestosImprimir";
+import PapelRosaImprimir from "../../pages/PapelRosa/PapelRosaImprimir";
+import { formatCurrency as fmtCur } from "../../pages/ReciboAlquiler/components/form.utils";
+import PrinterIcon from "../PrinterIcon";
 
 import styles from "./CardDataHandler.module.css";
 
@@ -11,6 +14,7 @@ const CardDataHandler = ({ data }) => {
   const isAlquiler  = data.type === "alquiler";
   const isRecibo    = data.type === "recibo";
   const isImpuesto  = data.type === "impuesto";
+  const isPapelRosa = data.type === "papelrosa";
 
   const formatCurrency = (value) => Number(value || 0).toLocaleString("es-AR");
 
@@ -35,12 +39,19 @@ const CardDataHandler = ({ data }) => {
     window.print();
   };
 
+  const handlePrintPapelRosa = () => {
+    document.querySelectorAll(".papel-rosa-print").forEach((el) => el.classList.remove("papel-rosa-print--active"));
+    const wrapper = document.querySelector(`[data-papel-rosa-id="${data.createdAt}"]`);
+    wrapper?.querySelector(".papel-rosa-print")?.classList.add("papel-rosa-print--active");
+    window.print();
+  };
+
   return (
     <div className={`montserrat ${styles.card}`}>
       {/* HEADER */}
       <div className={`flex w-full bg-white ${styles.cardTitle}`}>
         <p className="thin">
-          {data.type?.toUpperCase()}
+          {isPapelRosa ? "PAPEL ROSA" : data.type?.toUpperCase()}
           {isAlquiler && ` N°${data.id}`}
         </p>
       </div>
@@ -64,7 +75,20 @@ const CardDataHandler = ({ data }) => {
             <p>{formatPeriodo(data?.periodo)}</p>
             <p>{data?.fecha}</p>
             <button type="button" onClick={handlePrintRecibo} className={styles.printButton}>
-              Imprimir
+              <PrinterIcon size={12} />
+            </button>
+          </div>
+        )}
+
+        {/* PAPEL ROSA */}
+        {isPapelRosa && (
+          <div className={styles.noPadding}>
+            <p>Contrato N°{data.alquilerId}</p>
+            <p>{data.apellidoDueno}</p>
+            <p>{data.periodo}</p>
+            <p>Total: {fmtCur(data.totalACobrar)}</p>
+            <button type="button" onClick={handlePrintPapelRosa} className={styles.printButton}>
+              <PrinterIcon size={12} />
             </button>
           </div>
         )}
@@ -77,7 +101,7 @@ const CardDataHandler = ({ data }) => {
             <p>{data.inmueble?.direccion}</p>
             <p>{data.fecha}</p>
             <button type="button" onClick={handlePrintImpuesto} className={styles.printButton}>
-              Imprimir
+              <PrinterIcon size={12} />
             </button>
           </div>
         )}
@@ -95,6 +119,13 @@ const CardDataHandler = ({ data }) => {
           alquilerId={String(data.alquilerId)}
           printId={impPrintId}
         />,
+        document.body
+      )}
+
+      {isPapelRosa && createPortal(
+        <div data-papel-rosa-id={data.createdAt}>
+          <PapelRosaImprimir data={data} />
+        </div>,
         document.body
       )}
     </div>

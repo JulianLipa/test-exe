@@ -89,7 +89,8 @@ button:hover {
 
 /* ========================= PRINT ========================= */
 
-.recibo-print {
+.recibo-print,
+.papel-rosa-print {
   display: none;
 }
 
@@ -123,10 +124,26 @@ button:hover {
     font-family: "Montserrat", sans-serif;
   }
 
-  .recibo-print__logo {
-    height: 40px;
-    width: auto;
+  .recibo-print__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
     margin-bottom: 6px;
+  }
+
+  .recibo-print__logo {
+    height: 65px;
+    width: auto;
+  }
+
+  .recibo-print__header-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: #222;
   }
 
   .recibo-print__titulo {
@@ -185,5 +202,21 @@ button:hover {
     flex-direction: column;
     gap: 1px;
     margin: 2px 0;
+  }
+
+  /* ── Papel Rosa ── */
+  .papel-rosa-print--active,
+  .papel-rosa-print--active * {
+    visibility: visible;
+  }
+
+  .papel-rosa-print--active {
+    display: block !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    color: black;
+    font-family: "Montserrat", sans-serif;
   }
 }

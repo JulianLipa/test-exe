@@ -13,19 +13,41 @@
   display: none;
 }
 
-.fadeRight {
+.arrowRight {
   position: absolute;
   top: 0;
   right: 0;
   width: 60px;
   height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  background: linear-gradient(to left, rgb(var(--azul-900)), rgba(255, 255, 255, 0));
   pointer-events: none;
+}
 
-  background: linear-gradient(
-    to left,
-    rgb(var(--azul-900)),
-    rgba(255, 255, 255, 0)
-  );
+.arrowLeft {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 60px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  background: linear-gradient(to right, rgb(var(--azul-900)), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+
+.arrowRight button,
+.arrowLeft button {
+  pointer-events: all;
+  background: none;
+  border: none;
+  color: rgb(237,242,248);
+  font-size: 1.2em;
+  cursor: pointer;
+  padding: 0 8px;
 }
 
 .card {

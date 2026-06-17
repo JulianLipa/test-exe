@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ConfirmModal from "../../components/ConfirmModal";
 import ImpuestosImprimir from "../Impuestos/ImpuestosImprimir";
+import PrinterIcon from "../../components/PrinterIcon";
 
 const fmtDate = (value) => {
   if (!value) return "-";
@@ -45,9 +46,11 @@ const COLS = [
 const PRINT_ID = "imp-listado-print";
 
 export default function ListadoImpuestos() {
-  const [data, setData]               = useState([]);
+  const [rawData, setRawData]         = useState([]);
   const [showVolver, setShowVolver]   = useState(false);
   const [printTarget, setPrintTarget] = useState(null);
+  const [search, setSearch]           = useState("");
+  const [dateSort, setDateSort]       = useState("desc");
   const navigate = useNavigate();
   const navRef = useRef(navigate);
   useEffect(() => { navRef.current = navigate; });
@@ -65,7 +68,7 @@ export default function ListadoImpuestos() {
     const getData = async () => {
       try {
         const list = await window.store.getImpuestos();
-        setData(Array.isArray(list) ? list : []);
+        setRawData(Array.isArray(list) ? list : []);
       } catch (err) {
         console.error(err);
       }
@@ -87,11 +90,44 @@ export default function ListadoImpuestos() {
 
   const handleImprimir = (item) => setPrintTarget(item);
 
+  const data = rawData
+    .filter((i) =>
+      search.trim() === "" ? true : String(i.alquilerId ?? "").includes(search.trim())
+    )
+    .sort((a, b) => {
+      const da = a.fecha ? new Date(a.fecha) : new Date(0);
+      const db = b.fecha ? new Date(b.fecha) : new Date(0);
+      return dateSort === "asc" ? da - db : db - da;
+    });
+
   return (
     <div className="montserrat flex flex-col gap-5">
       <div className="flex items-center gap-5">
         <button onClick={() => setShowVolver(true)}>[-] Volver</button>
         <h2>Listado de impuestos</h2>
+      </div>
+
+      <div className="flex items-center gap-4" style={{ flexWrap: "wrap" }}>
+        <div className="flex items-center gap-2">
+          <label style={{ color: "rgba(237,242,248,0.6)", fontSize: "0.85em" }}>N° Contrato:</label>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar..."
+            style={{ width: 120 }}
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <label style={{ color: "rgba(237,242,248,0.6)", fontSize: "0.85em" }}>Fecha:</label>
+          <button
+            type="button"
+            onClick={() => setDateSort((s) => (s === "asc" ? "desc" : "asc"))}
+            style={{ minWidth: 110 }}
+          >
+            {dateSort === "asc" ? "↑ Más antigua" : "↓ Más reciente"}
+          </button>
+        </div>
       </div>
 
       <ConfirmModal
@@ -141,7 +177,7 @@ export default function ListadoImpuestos() {
                   ))}
                   <td style={tdStyle}>
                     <button type="button" onClick={() => handleImprimir(item)}>
-                      Imprimir
+                      <PrinterIcon />
                     </button>
                   </td>
                 </tr>
