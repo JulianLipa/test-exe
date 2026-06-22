@@ -42,6 +42,7 @@ export default function AlquilerSelector({ onChange }) {
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
           className="border p-2 rounded w-full"
+          autoFocus
         />
         <button type="button" onClick={handleSearch}>Buscar</button>
       </div>

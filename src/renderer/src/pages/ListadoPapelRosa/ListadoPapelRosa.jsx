@@ -5,6 +5,7 @@ import ConfirmModal from "../../components/ConfirmModal";
 import PapelRosaImprimir from "../PapelRosa/PapelRosaImprimir";
 import PrinterIcon from "../../components/PrinterIcon";
 import { formatCurrency } from "../ReciboAlquiler/components/form.utils";
+import ScrollTopTable from "../../components/ScrollTopTable/ScrollTopTable.jsx";
 
 const fmtDate = (v) => (v ? new Date(v + "T00:00:00").toLocaleDateString("es-AR") : "-");
 
@@ -30,13 +31,17 @@ const tdStyle = {
 
 export default function ListadoPapelRosa() {
   const [data, setData]               = useState([]);
+  const [loading, setLoading]         = useState(false);
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch]           = useState("");
   const [dateSort, setDateSort]       = useState("desc");
   const [showVolver, setShowVolver]   = useState(false);
   const [printTarget, setPrintTarget] = useState(null);
   const navigate = useNavigate();
   const navRef = useRef(navigate);
+  const firstInputRef = useRef(null);
   useEffect(() => { navRef.current = navigate; });
+  useEffect(() => { firstInputRef.current?.focus(); }, []);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -47,17 +52,20 @@ export default function ListadoPapelRosa() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const list = await window.store.getPapelRosa();
-        setData(Array.isArray(list) ? list : []);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    load();
-  }, []);
+  const handleSearch = async () => {
+    const query = searchInput.trim();
+    if (!query) return;
+    setSearch(query);
+    setLoading(true);
+    try {
+      const list = await window.store.searchPapelRosaPorContrato(query);
+      setData(Array.isArray(list) ? list : []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!printTarget) return;
@@ -71,13 +79,11 @@ export default function ListadoPapelRosa() {
     return () => clearTimeout(timer);
   }, [printTarget]);
 
-  const rows = data
-    .filter((r) => search.trim() === "" ? true : String(r.alquilerId ?? "").includes(search.trim()))
-    .sort((a, b) => {
-      const da = a.fecha ? new Date(a.fecha) : new Date(0);
-      const db = b.fecha ? new Date(b.fecha) : new Date(0);
-      return dateSort === "asc" ? da - db : db - da;
-    });
+  const rows = [...data].sort((a, b) => {
+    const da = a.fecha ? new Date(a.fecha) : new Date(0);
+    const db = b.fecha ? new Date(b.fecha) : new Date(0);
+    return dateSort === "asc" ? da - db : db - da;
+  });
 
   return (
     <div className="montserrat flex flex-col gap-5">
@@ -90,12 +96,15 @@ export default function ListadoPapelRosa() {
         <div className="flex items-center gap-2">
           <label style={{ color: "rgba(237,242,248,0.6)", fontSize: "0.85em" }}>N° Contrato:</label>
           <input
+            ref={firstInputRef}
             type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             placeholder="Buscar..."
             style={{ width: 120 }}
           />
+          <button type="button" onClick={handleSearch}>Buscar</button>
         </div>
         <div className="flex items-center gap-2">
           <label style={{ color: "rgba(237,242,248,0.6)", fontSize: "0.85em" }}>Fecha:</label>
@@ -105,14 +114,18 @@ export default function ListadoPapelRosa() {
         </div>
       </div>
 
-      {rows.length === 0 ? (
-        <p className="thin">No hay papeles rosa registrados.</p>
+      {search.trim() === "" ? (
+        <p className="thin">Ingresá un N° de contrato para buscar.</p>
+      ) : loading ? (
+        <p className="thin">Buscando...</p>
+      ) : rows.length === 0 ? (
+        <p className="thin">No se encontraron papeles rosa para ese contrato.</p>
       ) : (
-        <div style={{ overflowX: "auto" }}>
+        <ScrollTopTable>
           <table style={{ borderCollapse: "collapse", width: "100%" }}>
             <thead>
               <tr>
-                {["N°", "Locador", "Inmueble", "Período", "Fecha", "Monto total", "Total a cobrar"].map((h) => (
+                {["N°", "Locador", "Período", "Fecha", "Monto total", "Total a cobrar"].map((h) => (
                   <th key={h} style={thStyle}>{h}</th>
                 ))}
                 <th style={thStyle}><PrinterIcon /></th>
@@ -128,7 +141,6 @@ export default function ListadoPapelRosa() {
                 >
                   <td style={tdStyle}>{item.alquilerId ?? "-"}</td>
                   <td style={tdStyle}>{item.apellidoDueno || item.locador?.apellido || "-"}</td>
-                  <td style={tdStyle}>{item.inmueble?.direccion || "-"}</td>
                   <td style={tdStyle}>{item.periodo || "-"}</td>
                   <td style={tdStyle}>{fmtDate(item.fecha)}</td>
                   <td style={tdStyle}>{formatCurrency(item.montoTotal)}</td>
@@ -142,7 +154,7 @@ export default function ListadoPapelRosa() {
               ))}
             </tbody>
           </table>
-        </div>
+        </ScrollTopTable>
       )}
 
       <ConfirmModal open={showVolver} onConfirm={() => navRef.current("/")} onCancel={() => setShowVolver(false)}>

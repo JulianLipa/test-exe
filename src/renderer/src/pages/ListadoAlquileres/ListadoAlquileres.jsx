@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ConfirmModal from "../../components/ConfirmModal";
+import ScrollTopTable from "../../components/ScrollTopTable/ScrollTopTable.jsx";
 
 const fmt = (value) => {
   if (!value && value !== 0) return "-";
@@ -64,13 +65,16 @@ const COLS = [
   { key: "locador_nom",    label: "Locador Nom.",     filter: "search", getValue: (a) => a.locador?.nombre   || "" },
   { key: "locatario_ap",   label: "Locatario Ap.",    filter: "search", getValue: (a) => a.locatario?.apellido || "" },
   { key: "locatario_nom",  label: "Locatario Nom.",   filter: "search", getValue: (a) => a.locatario?.nombre   || "" },
-  { key: "inmueble",       label: "Inmueble",         filter: "none",   getValue: (a) => a.inmueble?.direccion || "-" },
   { key: "fecha_inicio",   label: "Inicio",           filter: "sort",   getValue: (a) => a.fecha_inicio || "" },
   { key: "fecha_fin",      label: "Fin",              filter: "sort",   getValue: (a) => a.fecha_fin    || "" },
   { key: "montos",         label: "Montos",           filter: "none",   getValue: null },
   { key: "honorario",      label: "Honorario",        filter: "none",   getValue: (a) => a.honorario ? `${a.honorario}%` : "-" },
   { key: "indice",         label: "Índice",           filter: "none",   getValue: (a) => a.indice || "-" },
   { key: "actualizacion",  label: "Actualiz.",        filter: "none",   getValue: (a) => a.actualizacion_meses ? `${a.actualizacion_meses}m` : "-" },
+  { key: "agip",           label: "AGIP",             filter: "none",   getValue: (a) => a.impuestos?.AGIP     != null ? String(a.impuestos.AGIP)     : "-" },
+  { key: "metrogas",       label: "Metrogas",         filter: "none",   getValue: (a) => a.impuestos?.METROGAS != null ? String(a.impuestos.METROGAS) : "-" },
+  { key: "edesur",         label: "Edesur",           filter: "none",   getValue: (a) => a.impuestos?.EDESUR   != null ? String(a.impuestos.EDESUR)   : "-" },
+  { key: "aysa",           label: "AYSA",             filter: "none",   getValue: (a) => a.impuestos?.AYSA     != null ? String(a.impuestos.AYSA)     : "-" },
   { key: "editar",         label: "Editar",           filter: "none",   getValue: null },
 ];
 
@@ -78,15 +82,20 @@ const initialSorts  = Object.fromEntries(COLS.filter((c) => c.filter === "sort")
 const initialSearch = Object.fromEntries(COLS.filter((c) => c.filter === "search").map((c) => [c.key, ""]));
 
 export default function ListadoAlquileres() {
-  const [data, setData]           = useState([]);
-  const [showVolver, setShowVolver] = useState(false);
-  const [montoEdits, setMontoEdits] = useState({});
+  const [data, setData]                   = useState([]);
+  const [loading, setLoading]             = useState(false);
+  const [showVolver, setShowVolver]       = useState(false);
+  const [montoEdits, setMontoEdits]       = useState({});
+  const [searchIdInput, setSearchIdInput] = useState("");
+  const [searchId, setSearchId]           = useState("");
   // sortOrder: array de { key, dir } en orden de prioridad (primero = más importante)
   const [sortOrder, setSortOrder] = useState([]);
   const [searches, setSearches]   = useState(initialSearch);
   const navigate = useNavigate();
   const navRef   = useRef(navigate);
+  const firstInputRef = useRef(null);
   useEffect(() => { navRef.current = navigate; });
+  useEffect(() => { firstInputRef.current?.focus(); }, []);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -97,20 +106,20 @@ export default function ListadoAlquileres() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  useEffect(() => {
-    const getData = async () => {
-      try {
-        const db = await window.store.loadDB();
-        const list = Array.isArray(db)
-          ? db
-          : Object.values(db || {}).find((v) => Array.isArray(v)) || [];
-        setData(list);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    getData();
-  }, []);
+  const handleSearch = async () => {
+    const query = searchIdInput.trim();
+    if (!query) return;
+    setSearchId(query);
+    setLoading(true);
+    try {
+      const results = await window.store.filtrarAlquileresPorId(query);
+      setData(Array.isArray(results) ? results : []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ── monto helpers ─────────────────────────────────────────────────────────
 
@@ -165,8 +174,8 @@ export default function ListadoAlquileres() {
     setSearches((prev) => ({ ...prev, [key]: val }));
   };
 
-  // aplicar búsquedas de texto
-  let rows = data.filter((a) =>
+  // aplicar búsquedas de texto (data ya está filtrada por id en el backend)
+  let rows = searchId.trim() === "" ? [] : data.filter((a) =>
     COLS.filter((c) => c.filter === "search").every((c) => {
       const q = searches[c.key].trim().toLowerCase();
       if (!q) return true;
@@ -241,6 +250,20 @@ export default function ListadoAlquileres() {
         <h2>Listado de alquileres</h2>
       </div>
 
+      <div className="flex items-center gap-2">
+        <label style={{ color: "rgba(237,242,248,0.6)", fontSize: "0.85em" }}>N° Contrato:</label>
+        <input
+          ref={firstInputRef}
+          type="text"
+          value={searchIdInput}
+          onChange={(e) => setSearchIdInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          placeholder="Buscar..."
+          style={{ width: 120 }}
+        />
+        <button type="button" onClick={handleSearch}>Buscar</button>
+      </div>
+
       <ConfirmModal open={showVolver} onConfirm={() => navRef.current("/")} onCancel={() => setShowVolver(false)}>
         <div className="p-4">
           <p className="mb-4">¿Seguro que querés volver al menú?</p>
@@ -251,10 +274,14 @@ export default function ListadoAlquileres() {
         </div>
       </ConfirmModal>
 
-      {data.length === 0 ? (
-        <p className="thin">No hay alquileres registrados.</p>
+      {searchId.trim() === "" ? (
+        <p className="thin">Ingresá un N° de contrato para buscar.</p>
+      ) : loading ? (
+        <p className="thin">Buscando...</p>
+      ) : rows.length === 0 ? (
+        <p className="thin">No se encontraron alquileres para ese contrato.</p>
       ) : (
-        <div style={{ overflowX: "auto" }}>
+        <ScrollTopTable>
           <table style={{ borderCollapse: "collapse", width: "100%" }}>
             <thead>
               <tr>
@@ -303,7 +330,7 @@ export default function ListadoAlquileres() {
               ))}
             </tbody>
           </table>
-        </div>
+        </ScrollTopTable>
       )}
     </div>
   );

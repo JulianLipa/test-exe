@@ -6,7 +6,8 @@ const DataHandler = () => {
   const [data, setData] = useState([]);
   const [canScrollLeft, setCanScrollLeft]   = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
-  const scrollRef = useRef(null);
+  const scrollRef       = useRef(null);
+  const alquileresMapRef = useRef(new Map());
 
   const ordenar = (arr) =>
     [...arr].sort(
@@ -16,10 +17,10 @@ const DataHandler = () => {
     );
 
   const getTypeFromFile = (file) => {
-    if (file === "data.json")       return "alquiler";
-    if (file === "recibos-alq.json") return "recibo";
-    if (file === "impuestos.json")  return "impuesto";
-    if (file === "papel-rosa.json") return "papelrosa";
+    if (file === "data.json")          return "alquiler";
+    if (file === "recibos-alq.json")   return "recibo";
+    if (file === "impuestos.json")     return "impuesto";
+    if (file === "papeles-rosa.json")  return "papelrosa";
     return null;
   };
 
@@ -37,27 +38,15 @@ const DataHandler = () => {
   useEffect(() => {
     const loadInitial = async () => {
       try {
-        const alquileres  = await window.store.loadDB();
-        const recibos     = await window.store.getRecibos();
-        const impuestos   = await window.store.getImpuestos();
-        const papelRosas  = await window.store.getPapelRosa();
+        const alquileres = await window.store.loadDB();
+        const papelRosas = await window.store.getPapelRosa();
+
+        // Map para joins O(1) en onDBUpdate
+        alquileresMapRef.current = new Map((alquileres || []).map((a) => [a.id, a]));
 
         const merged = [
           ...(alquileres || []).map((item) => ({ ...item, type: "alquiler" })),
-          ...(recibos    || []).map((item) => ({
-            ...item,
-            type: "recibo",
-            alquiler: (alquileres || []).find((a) => a.id === item.alquilerId) || null,
-          })),
-          ...(impuestos  || []).map((item) => ({
-            ...item,
-            type: "impuesto",
-            alquiler: (alquileres || []).find((a) => a.id === item.alquilerId) || null,
-          })),
-          ...(papelRosas || []).map((item) => ({
-            ...item,
-            type: "papelrosa",
-          })),
+          ...(papelRosas || []).map((item) => ({ ...item, type: "papelrosa" })),
         ];
 
         setData(ordenar(merged));
@@ -73,14 +62,28 @@ const DataHandler = () => {
         const type = getTypeFromFile(payload.file);
         if (!type) return prev;
 
-        const existingIds = new Set(prev.map((item) => `${item.type}-${item.id}-${item.createdAt}`));
+        // Archivos completos (data.json, papeles-rosa.json)
+        if (payload.data) {
+          if (type === "alquiler") {
+            alquileresMapRef.current = new Map(payload.data.map((a) => [a.id, a]));
+          }
+          const existingIds = new Set(
+            prev.map((item) => `${item.type}-${item.id}-${item.createdAt}`)
+          );
+          const nuevos = payload.data
+            .map((item) => ({ ...item, type }))
+            .filter((item) => !existingIds.has(`${item.type}-${item.id}-${item.createdAt}`));
+          if (!nuevos.length) return prev;
+          return ordenar([...nuevos, ...prev]);
+        }
 
-        const nuevos = (payload.data || [])
-          .map((item) => ({ ...item, type }))
-          .filter((item) => !existingIds.has(`${item.type}-${item.id}-${item.createdAt}`));
+        // Item único (recibos-alq.json, impuestos.json)
+        if (payload.item) {
+          const alquiler = alquileresMapRef.current.get(payload.item.alquilerId) || null;
+          return ordenar([{ ...payload.item, type, alquiler }, ...prev]);
+        }
 
-        if (!nuevos.length) return prev;
-        return ordenar([...nuevos, ...prev]);
+        return prev;
       });
     });
 

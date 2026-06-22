@@ -2,43 +2,45 @@ import { app, shell, BrowserWindow, ipcMain } from "electron";
 import { join } from "path";
 import { electronApp, optimizer, is } from "@electron-toolkit/utils";
 import icon from "../../resources/icon.ico";
-import { readFileSync, existsSync, watch } from "fs"; // 👈 agregamos watch
+import { existsSync, watch } from "fs";
 import fs from "fs/promises";
 
-function inicializarDB() {
-  const dbPath = join(app.getPath("desktop"), "db", "data.json");
+const dbPath     = () => join(app.getPath("desktop"), "db", "data.json");
+const recibosPath  = () => join(app.getPath("desktop"), "db", "recibos-alq.json");
+const impuestosPath = () => join(app.getPath("desktop"), "db", "impuestos.json");
+const papelRosaPath = () => join(app.getPath("desktop"), "db", "papeles-rosa.json");
 
-  if (!existsSync(dbPath)) {
-    console.log("No se encontró el archivo en:", dbPath);
-  } else {
-    const data = JSON.parse(readFileSync(dbPath, "utf-8"));
+async function readJSON(filePath, fallback = []) {
+  try {
+    if (!existsSync(filePath)) return fallback;
+    const raw = await fs.readFile(filePath, "utf-8");
+    return JSON.parse(raw || JSON.stringify(fallback));
+  } catch {
+    return fallback;
   }
 }
 
-// =========================
-// 👀 WATCH DB (NUEVO)
-// =========================
 function watchDB(win) {
   const dbDir = join(app.getPath("desktop"), "db");
-
   if (!existsSync(dbDir)) return;
+
+  const SEND_FULL = ["data.json", "papeles-rosa.json"];
 
   watch(dbDir, (eventType, filename) => {
     if (!filename) return;
-
     const fullPath = join(dbDir, filename);
-
     try {
       if (!existsSync(fullPath)) return;
-
+      const { readFileSync } = require("fs");
       const raw = readFileSync(fullPath, "utf-8");
       const data = JSON.parse(raw || "[]");
 
-      // 🔥 enviamos al frontend
-      win.webContents.send("db:update", {
-        file: filename,
-        data,
-      });
+      if (SEND_FULL.includes(filename)) {
+        win.webContents.send("db:update", { file: filename, data });
+      } else {
+        const item = data.length > 0 ? data[data.length - 1] : null;
+        win.webContents.send("db:update", { file: filename, item });
+      }
     } catch (err) {
       console.error("Error leyendo cambio:", err);
     }
@@ -74,7 +76,6 @@ function createWindow() {
     mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
   }
 
-  // 👇 ACTIVAMOS EL WATCHER
   watchDB(mainWindow);
 }
 
@@ -91,30 +92,14 @@ app.whenReady().then(() => {
   // DB GENERAL
   // =========================
 
-  ipcMain.handle("db:leer", () => {
-    const dbPath = join(app.getPath("desktop"), "db", "data.json");
-    const data = JSON.parse(readFileSync(dbPath, "utf-8"));
-    return data;
-  });
+  ipcMain.handle("db:leer", async () => readJSON(dbPath()));
 
-  ipcMain.handle("db:agregar", async (event, nuevoDato) => {
+  ipcMain.handle("db:agregar", async (_, nuevoDato) => {
     try {
-      const dbPath = join(app.getPath("desktop"), "db", "data.json");
-
-      let data = [];
-      if (existsSync(dbPath)) {
-        const raw = readFileSync(dbPath, "utf-8");
-        data = JSON.parse(raw);
-      }
-
-      const nuevo = {
-        createdAt: new Date().toISOString(),
-        ...nuevoDato,
-      };
-
-      data.push(nuevo);
-      await fs.writeFile(dbPath, JSON.stringify(data, null, 2));
-
+      const path = dbPath();
+      const data = await readJSON(path);
+      data.push({ createdAt: new Date().toISOString(), ...nuevoDato });
+      await fs.writeFile(path, JSON.stringify(data, null, 2));
       return { ok: true };
     } catch (error) {
       console.error("Error agregando dato:", error);
@@ -122,20 +107,14 @@ app.whenReady().then(() => {
     }
   });
 
-  ipcMain.handle("db:actualizar", async (event, itemActualizado) => {
+  ipcMain.handle("db:actualizar", async (_, itemActualizado) => {
     try {
-      const dbPath = join(app.getPath("desktop"), "db", "data.json");
-      if (!existsSync(dbPath)) return { ok: false, error: "DB no encontrada" };
-
-      const data = JSON.parse(readFileSync(dbPath, "utf-8"));
-      const index = data.findIndex(
-        (item) => String(item.id) === String(itemActualizado.id),
-      );
+      const path = dbPath();
+      const data = await readJSON(path);
+      const index = data.findIndex((item) => String(item.id) === String(itemActualizado.id));
       if (index === -1) return { ok: false, error: "Alquiler no encontrado" };
-
       data[index] = { ...data[index], ...itemActualizado };
-      await fs.writeFile(dbPath, JSON.stringify(data, null, 2));
-
+      await fs.writeFile(path, JSON.stringify(data, null, 2));
       return { ok: true };
     } catch (error) {
       console.error("Error actualizando dato:", error);
@@ -143,23 +122,16 @@ app.whenReady().then(() => {
     }
   });
 
-  ipcMain.handle("db:actualizarMonto", async (event, { alquilerId, numero, monto }) => {
+  ipcMain.handle("db:actualizarMonto", async (_, { alquilerId, numero, monto }) => {
     try {
-      const dbPath = join(app.getPath("desktop"), "db", "data.json");
-      if (!existsSync(dbPath)) return { ok: false, error: "DB no encontrada" };
-
-      const data = JSON.parse(readFileSync(dbPath, "utf-8"));
+      const path = dbPath();
+      const data = await readJSON(path);
       const item = data.find((e) => String(e.id) === String(alquilerId));
-      if (!item || !Array.isArray(item.montos)) {
-        return { ok: false, error: "Alquiler no encontrado" };
-      }
-
+      if (!item || !Array.isArray(item.montos)) return { ok: false, error: "Alquiler no encontrado" };
       const montoItem = item.montos.find((m) => Number(m.numero) === Number(numero));
       if (!montoItem) return { ok: false, error: "Monto no encontrado" };
-
       montoItem.monto = monto;
-      await fs.writeFile(dbPath, JSON.stringify(data, null, 2));
-
+      await fs.writeFile(path, JSON.stringify(data, null, 2));
       return { ok: true };
     } catch (error) {
       console.error("Error actualizando monto:", error);
@@ -167,37 +139,27 @@ app.whenReady().then(() => {
     }
   });
 
+  ipcMain.handle("db:filtrarPorId", async (_, query) => {
+    const data = await readJSON(dbPath());
+    const q = String(query ?? "").trim();
+    if (!q) return [];
+    return data.filter((a) => String(a.id ?? "").includes(q));
+  });
+
   // =========================
   // 🧾 RECIBOS
   // =========================
 
+  ipcMain.handle("recibos:leer", async () => readJSON(recibosPath()));
+
   ipcMain.handle("recibos:agregar", async (_, nuevoRecibo) => {
     try {
+      const path = recibosPath();
       const dbDir = join(app.getPath("desktop"), "db");
-      const filePath = join(dbDir, "recibos-alq.json");
-
-      if (!existsSync(dbDir)) {
-        await fs.mkdir(dbDir, { recursive: true });
-      }
-
-      let data = [];
-
-      if (existsSync(filePath)) {
-        const raw = readFileSync(filePath, "utf-8");
-        data = JSON.parse(raw || "[]");
-      } else {
-        await fs.writeFile(filePath, "[]");
-      }
-
-      const nuevo = {
-        createdAt: new Date().toISOString(),
-        ...nuevoRecibo,
-      };
-
-      data.push(nuevo);
-
-      await fs.writeFile(filePath, JSON.stringify(data, null, 2));
-
+      if (!existsSync(dbDir)) await fs.mkdir(dbDir, { recursive: true });
+      const data = await readJSON(path);
+      data.push({ createdAt: new Date().toISOString(), ...nuevoRecibo });
+      await fs.writeFile(path, JSON.stringify(data, null, 2));
       return { ok: true };
     } catch (error) {
       console.error("Error guardando recibo:", error);
@@ -205,30 +167,27 @@ app.whenReady().then(() => {
     }
   });
 
+  ipcMain.handle("recibos:buscarPorContrato", async (_, query) => {
+    const data = await readJSON(recibosPath());
+    const q = String(query ?? "").trim();
+    if (!q) return [];
+    return data.filter((r) => String(r.alquilerId ?? r.id ?? "").includes(q));
+  });
+
   // =========================
   // 🧾 IMPUESTOS
   // =========================
 
+  ipcMain.handle("impuestos:leer", async () => readJSON(impuestosPath()));
+
   ipcMain.handle("impuestos:agregar", async (_, nuevoImpuesto) => {
     try {
+      const path = impuestosPath();
       const dbDir = join(app.getPath("desktop"), "db");
-      const filePath = join(dbDir, "impuestos.json");
-
-      if (!existsSync(dbDir)) {
-        await fs.mkdir(dbDir, { recursive: true });
-      }
-
-      let data = [];
-      if (existsSync(filePath)) {
-        const raw = readFileSync(filePath, "utf-8");
-        data = JSON.parse(raw || "[]");
-      } else {
-        await fs.writeFile(filePath, "[]");
-      }
-
-      const nuevo = { createdAt: new Date().toISOString(), ...nuevoImpuesto };
-      data.push(nuevo);
-      await fs.writeFile(filePath, JSON.stringify(data, null, 2));
+      if (!existsSync(dbDir)) await fs.mkdir(dbDir, { recursive: true });
+      const data = await readJSON(path);
+      data.push({ createdAt: new Date().toISOString(), ...nuevoImpuesto });
+      await fs.writeFile(path, JSON.stringify(data, null, 2));
       return { ok: true };
     } catch (error) {
       console.error("Error guardando impuesto:", error);
@@ -236,35 +195,27 @@ app.whenReady().then(() => {
     }
   });
 
-  ipcMain.handle("impuestos:leer", async () => {
-    try {
-      const filePath = join(app.getPath("desktop"), "db", "impuestos.json");
-      if (!existsSync(filePath)) return [];
-      return JSON.parse(readFileSync(filePath, "utf-8") || "[]");
-    } catch (error) {
-      console.error("Error leyendo impuestos:", error);
-      return [];
-    }
+  ipcMain.handle("impuestos:buscarPorContrato", async (_, query) => {
+    const data = await readJSON(impuestosPath());
+    const q = String(query ?? "").trim();
+    if (!q) return [];
+    return data.filter((i) => String(i.alquilerId ?? "").includes(q));
   });
 
   // =========================
   // 🌸 PAPEL ROSA
   // =========================
 
+  ipcMain.handle("papel-rosa:leer", async () => readJSON(papelRosaPath()));
+
   ipcMain.handle("papel-rosa:agregar", async (_, nuevo) => {
     try {
+      const path = papelRosaPath();
       const dbDir = join(app.getPath("desktop"), "db");
-      const filePath = join(dbDir, "papeles-rosa.json");
       if (!existsSync(dbDir)) await fs.mkdir(dbDir, { recursive: true });
-      let data = [];
-      if (existsSync(filePath)) {
-        const raw = readFileSync(filePath, "utf-8");
-        data = JSON.parse(raw || "[]");
-      } else {
-        await fs.writeFile(filePath, "[]");
-      }
+      const data = await readJSON(path);
       data.push({ createdAt: new Date().toISOString(), ...nuevo });
-      await fs.writeFile(filePath, JSON.stringify(data, null, 2));
+      await fs.writeFile(path, JSON.stringify(data, null, 2));
       return { ok: true };
     } catch (error) {
       console.error("Error guardando papel rosa:", error);
@@ -272,32 +223,13 @@ app.whenReady().then(() => {
     }
   });
 
-  ipcMain.handle("papel-rosa:leer", async () => {
-    try {
-      const filePath = join(app.getPath("desktop"), "db", "papeles-rosa.json");
-      if (!existsSync(filePath)) return [];
-      return JSON.parse(readFileSync(filePath, "utf-8") || "[]");
-    } catch (error) {
-      console.error("Error leyendo papel rosa:", error);
-      return [];
-    }
+  ipcMain.handle("papel-rosa:buscarPorContrato", async (_, query) => {
+    const data = await readJSON(papelRosaPath());
+    const q = String(query ?? "").trim();
+    if (!q) return [];
+    return data.filter((p) => String(p.alquilerId ?? "").includes(q));
   });
 
-  ipcMain.handle("recibos:leer", async () => {
-    try {
-      const filePath = join(app.getPath("desktop"), "db", "recibos-alq.json");
-
-      if (!existsSync(filePath)) return [];
-
-      const data = JSON.parse(readFileSync(filePath, "utf-8") || "[]");
-      return data;
-    } catch (error) {
-      console.error("Error leyendo recibos:", error);
-      return [];
-    }
-  });
-
-  inicializarDB();
   createWindow();
 
   app.on("activate", function () {

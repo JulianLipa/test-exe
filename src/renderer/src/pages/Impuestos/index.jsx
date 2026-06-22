@@ -57,8 +57,6 @@ export default function Impuestos() {
   const confirmSave = async () => {
     const payload = {
       alquilerId: Number(alquilerId),
-      locatario: alquiler?.locatario,
-      inmueble: alquiler?.inmueble,
       fecha: new Date().toISOString().split("T")[0],
       ...form,
     };

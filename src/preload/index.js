@@ -73,6 +73,7 @@ const store = {
 
   addRecibo: (recibo) => ipcRenderer.invoke("recibos:agregar", recibo),
   getRecibos: () => ipcRenderer.invoke("recibos:leer"),
+  searchRecibosPorContrato: (query) => ipcRenderer.invoke("recibos:buscarPorContrato", query),
 
   // =========================
   // 🧾 IMPUESTOS
@@ -80,6 +81,7 @@ const store = {
 
   addImpuesto: (impuesto) => ipcRenderer.invoke("impuestos:agregar", impuesto),
   getImpuestos: () => ipcRenderer.invoke("impuestos:leer"),
+  searchImpuestosPorContrato: (query) => ipcRenderer.invoke("impuestos:buscarPorContrato", query),
 
   // =========================
   // 🌸 PAPEL ROSA
@@ -87,6 +89,13 @@ const store = {
 
   addPapelRosa: (item) => ipcRenderer.invoke("papel-rosa:agregar", item),
   getPapelRosa: () => ipcRenderer.invoke("papel-rosa:leer"),
+  searchPapelRosaPorContrato: (query) => ipcRenderer.invoke("papel-rosa:buscarPorContrato", query),
+
+  // =========================
+  // 🔍 BÚSQUEDA POR CONTRATO
+  // =========================
+
+  filtrarAlquileresPorId: (query) => ipcRenderer.invoke("db:filtrarPorId", query),
 
   // =========================
   // 👀 WATCH DB (NUEVO)

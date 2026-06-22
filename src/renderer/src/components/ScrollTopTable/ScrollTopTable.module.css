@@ -1,0 +1,41 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.topScroll {
+  overflow-x: scroll;
+  overflow-y: hidden;
+  height: 12px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+}
+
+.topScroll::-webkit-scrollbar {
+  height: 12px;
+}
+
+.topScroll::-webkit-scrollbar-track {
+  background: rgba(237, 242, 248, 0.06);
+  border-radius: 6px;
+}
+
+.topScroll::-webkit-scrollbar-thumb {
+  background: rgba(237, 242, 248, 0.22);
+  border-radius: 6px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+.topScroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(237, 242, 248, 0.42);
+  background-clip: content-box;
+}
+
+.content {
+  overflow-x: auto;
+}
+
+.content::-webkit-scrollbar {
+  display: none;
+}

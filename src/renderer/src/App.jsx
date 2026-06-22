@@ -8,6 +8,7 @@ import ListadoRecibos from "./pages/ListadoRecibos/ListadoRecibos.jsx";
 import ListadoImpuestos from "./pages/ListadoImpuestos/ListadoImpuestos.jsx";
 import PapelRosa from "./pages/PapelRosa/PapelRosa.jsx";
 import ListadoPapelRosa from "./pages/ListadoPapelRosa/ListadoPapelRosa.jsx";
+import ListadoProximoMes from "./pages/ListadoProximoMes/ListadoProximoMes.jsx";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <Route path="/listadoImpuestos" element={<ListadoImpuestos />} />
         <Route path="/papelRosa" element={<PapelRosa />} />
         <Route path="/listadoPapelRosa" element={<ListadoPapelRosa />} />
+        <Route path="/listadoProximoMes" element={<ListadoProximoMes />} />
       </Routes>
     </HashRouter>
   );

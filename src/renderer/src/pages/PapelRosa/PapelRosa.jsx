@@ -239,6 +239,7 @@ export default function PapelRosa() {
           onKeyDown={(e) => e.key === "Enter" && handleBuscar()}
           style={{ width: 120 }}
           placeholder="Ej: 12"
+          autoFocus
         />
         <button type="button" onClick={handleBuscar}>Buscar</button>
       </div>

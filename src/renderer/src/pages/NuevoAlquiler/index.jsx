@@ -104,43 +104,49 @@ const NuevoAlquiler = () => {
       <form onSubmit={handleSubmit} className="pb-5">
         <input name="id" value={form.id} readOnly />
 
-        {formConfig.map((section) => (
-          <Section key={section.section} title={section.section}>
-            {section.fields.map((field) => {
-              const value = field.name
-                .split(".")
-                .reduce((acc, key) => acc?.[key], form);
+        {(() => {
+          let firstField = true;
+          return formConfig.map((section) => (
+            <Section key={section.section} title={section.section}>
+              {section.fields.map((field) => {
+                const value = field.name
+                  .split(".")
+                  .reduce((acc, key) => acc?.[key], form);
 
-              if (field.type === "select") {
+                if (field.type === "select") {
+                  firstField = false;
+                  return (
+                    <div key={field.name}>
+                      <p>{field.label}</p>
+                      <select
+                        name={field.name}
+                        value={value}
+                        onChange={handleChange}
+                        required={field.required}
+                      >
+                        <option value="">Seleccionar</option>
+                        {field.options.map((opt) => (
+                          <option key={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    </div>
+                  );
+                }
+
+                const isFirst = firstField;
+                firstField = false;
                 return (
-                  <div key={field.name}>
-                    <p>{field.label}</p>
-                    <select
-                      name={field.name}
-                      value={value}
-                      onChange={handleChange}
-                      required={field.required}
-                    >
-                      <option value="">Seleccionar</option>
-                      {field.options.map((opt) => (
-                        <option key={opt}>{opt}</option>
-                      ))}
-                    </select>
-                  </div>
-                );
-              }
-
-              return (
-                <FormField
-                  key={field.name}
-                  {...field}
-                  value={value}
-                  onChange={handleChange}
-                />
+                  <FormField
+                    key={field.name}
+                    {...field}
+                    value={value}
+                    onChange={handleChange}
+                    autoFocus={isFirst}
+                  />
               );
             })}
           </Section>
-        ))}
+        ))})()}
 
         <div className="gap-4 flex">
           <button type="submit" className="">

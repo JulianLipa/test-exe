@@ -5,6 +5,7 @@ const FormField = ({
   onChange,
   type = "text",
   required,
+  autoFocus,
 }) => {
   return (
     <div style={{ display: "flex", flexDirection: "column", marginBottom: 10 }}>
@@ -15,6 +16,7 @@ const FormField = ({
         onChange={onChange}
         type={type}
         required={required}
+        autoFocus={autoFocus}
       />
     </div>
   );
