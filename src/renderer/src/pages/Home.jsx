@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
+  addMonths,
   getNextMonth,
   monthName,
   getAlquileresQueActualizan,
@@ -19,10 +20,6 @@ const ROUTES = {
   "8": "/listadoPapelRosa",
 };
 
-function addMonths({ year, month }, n) {
-  const total = year * 12 + month + n;
-  return { year: Math.floor(total / 12), month: ((total % 12) + 12) % 12 };
-}
 
 const badgeStyle = (tipo) => ({
   fontSize: "0.72em",

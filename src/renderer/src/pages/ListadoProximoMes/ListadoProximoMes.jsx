@@ -3,14 +3,14 @@ import { useNavigate } from "react-router-dom";
 import ConfirmModal from "../../components/ConfirmModal";
 import ScrollTopTable from "../../components/ScrollTopTable/ScrollTopTable.jsx";
 import {
+  addMonths,
   getNextMonth,
   monthName,
   getAlquileresQueActualizan,
   getAlquileresQueVencen,
 } from "../../utils/proximoMes.js";
-
-const fmtDate = (v) =>
-  v ? new Date(v + "T00:00:00").toLocaleDateString("es-AR") : "-";
+import { fmtDate } from "../../utils/formatters.js";
+import { thStyle, tdStyle, trStyle } from "../../utils/tableStyles.js";
 
 const firstWord = (str) => (str || "").trim().split(/\s+/)[0] || "-";
 const displayPerson = (p) => `${firstWord(p?.apellido)}, ${firstWord(p?.nombre)}`;
@@ -26,54 +26,23 @@ const getMontoValue = (item, n) => {
   return n === 1 ? fmtMonto(item.monto_inicial) : "-";
 };
 
-const getMaxMontoNum = (arr) => {
-  let max = 1;
-  for (const item of arr) {
-    if (item.montos?.length) {
-      for (const m of item.montos) {
-        if (m.numero > max) max = m.numero;
-      }
-    }
-  }
-  return max;
+const hasAnyValue = (arr, n) =>
+  arr.some((item) => getMontoValue(item, n) !== "-");
+
+const getLastConsecutiveMontoNum = (arr) => {
+  if (!arr.length) return 0;
+  let n = 0;
+  while (n < 200 && hasAnyValue(arr, n + 1)) n++;
+  return n;
 };
 
-const sortByFechaInicio = (arr) =>
+const sortByFechaFin = (arr) =>
   [...arr].sort((a, b) => {
-    const da = a.fecha_inicio ? new Date(a.fecha_inicio) : new Date(0);
-    const db = b.fecha_inicio ? new Date(b.fecha_inicio) : new Date(0);
+    const da = a.fecha_fin ? new Date(a.fecha_fin) : new Date(0);
+    const db = b.fecha_fin ? new Date(b.fecha_fin) : new Date(0);
     return da - db;
   });
 
-function addMonths({ year, month }, n) {
-  const total = year * 12 + month + n;
-  return { year: Math.floor(total / 12), month: ((total % 12) + 12) % 12 };
-}
-
-const thStyle = {
-  padding: "10px 14px",
-  textAlign: "left",
-  borderBottom: "1px solid rgba(237,242,248,0.2)",
-  color: "rgba(237,242,248,0.5)",
-  fontWeight: 600,
-  fontSize: "0.78em",
-  textTransform: "uppercase",
-  letterSpacing: "0.05em",
-  whiteSpace: "nowrap",
-};
-
-const tdStyle = {
-  padding: "10px 14px",
-  color: "rgb(237,242,248)",
-  fontWeight: 500,
-  fontSize: "0.9em",
-  whiteSpace: "nowrap",
-};
-
-const trHover = {
-  borderBottom: "1px solid rgba(237,242,248,0.08)",
-  transition: "background 0.15s",
-};
 
 const sectionTitleStyle = {
   fontSize: "1.05em",
@@ -85,8 +54,8 @@ const sectionTitleStyle = {
 };
 
 function AlquileresTable({ items, maxMontos }) {
-  const sorted = sortByFechaInicio(items);
-  const montoNums = Array.from({ length: maxMontos }, (_, i) => i + 1);
+  const sorted = sortByFechaFin(items);
+  const montoNums = maxMontos > 0 ? Array.from({ length: maxMontos }, (_, i) => i + 1) : [];
 
   return (
     <ScrollTopTable>
@@ -107,7 +76,7 @@ function AlquileresTable({ items, maxMontos }) {
           {sorted.map((item) => (
             <tr
               key={item.id}
-              style={trHover}
+              style={trStyle}
               onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(237,242,248,0.05)")}
               onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
             >
@@ -160,8 +129,8 @@ export default function ListadoProximoMes() {
   const label           = monthName(year, month);
   const actualizan      = getAlquileresQueActualizan(alquileres, year, month);
   const vencen          = getAlquileresQueVencen(alquileres, year, month);
-  const maxAct          = getMaxMontoNum(actualizan);
-  const maxVen          = getMaxMontoNum(vencen);
+  const maxAct          = getLastConsecutiveMontoNum(actualizan);
+  const maxVen          = getLastConsecutiveMontoNum(vencen);
 
   return (
     <div className="montserrat flex flex-col gap-6">

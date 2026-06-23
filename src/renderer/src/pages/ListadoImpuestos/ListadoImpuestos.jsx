@@ -4,31 +4,9 @@ import ConfirmModal from "../../components/ConfirmModal";
 import ImpuestosImprimir from "../Impuestos/ImpuestosImprimir";
 import PrinterIcon from "../../components/PrinterIcon";
 import ScrollTopTable from "../../components/ScrollTopTable/ScrollTopTable.jsx";
-
-const fmtDate = (value) => {
-  if (!value) return "-";
-  return new Date(value + "T00:00:00").toLocaleDateString("es-AR");
-};
-
-const thStyle = {
-  padding: "10px 14px",
-  textAlign: "left",
-  borderBottom: "1px solid rgba(237,242,248,0.2)",
-  color: "rgba(237,242,248,0.5)",
-  fontWeight: 600,
-  fontSize: "0.78em",
-  textTransform: "uppercase",
-  letterSpacing: "0.05em",
-  whiteSpace: "nowrap",
-};
-
-const tdStyle = {
-  padding: "10px 14px",
-  color: "rgb(237,242,248)",
-  fontWeight: 500,
-  fontSize: "0.9em",
-  whiteSpace: "nowrap",
-};
+import { alquilerMatchesQuery } from "../../utils/search.js";
+import { fmtDate } from "../../utils/formatters.js";
+import { thStyle, tdStyle, trStyle } from "../../utils/tableStyles.js";
 
 const COLS = [
   { label: "N°",              render: (i) => i.alquilerId ?? "-" },
@@ -86,11 +64,16 @@ export default function ListadoImpuestos() {
     setSearch(query);
     setLoading(true);
     try {
-      const [impuestos, alquileres] = await Promise.all([
-        window.store.searchImpuestosPorContrato(query),
-        window.store.filtrarAlquileresPorId(query),
+      const [todosImpuestos, todosAlquileres] = await Promise.all([
+        window.store.getImpuestos(),
+        window.store.loadDB(),
       ]);
-      const alqMap = Object.fromEntries(alquileres.map((a) => [String(a.id), a]));
+      const matchingAlq = todosAlquileres.filter((a) => alquilerMatchesQuery(a, query));
+      const matchingIds = new Set(matchingAlq.map((a) => String(a.id)));
+      const alqMap = Object.fromEntries(matchingAlq.map((a) => [String(a.id), a]));
+      const impuestos = todosImpuestos.filter((i) =>
+        matchingIds.has(String(i.alquilerId ?? ""))
+      );
       setData(
         impuestos.map((i) => {
           const alq = alqMap[String(i.alquilerId)];
@@ -119,15 +102,15 @@ export default function ListadoImpuestos() {
 
       <div className="flex items-center gap-4" style={{ flexWrap: "wrap" }}>
         <div className="flex items-center gap-2">
-          <label style={{ color: "rgba(237,242,248,0.6)", fontSize: "0.85em" }}>N° Contrato:</label>
+          <label style={{ color: "rgba(237,242,248,0.6)", fontSize: "0.85em" }}>Buscar:</label>
           <input
             ref={firstInputRef}
             type="text"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            placeholder="Buscar..."
-            style={{ width: 120 }}
+            placeholder="N° contrato, ap. locador o locatario"
+            style={{ width: 220 }}
           />
           <button type="button" onClick={handleSearch}>Buscar</button>
         </div>
@@ -158,11 +141,11 @@ export default function ListadoImpuestos() {
       </ConfirmModal>
 
       {search.trim() === "" ? (
-        <p className="thin">Ingresá un N° de contrato para buscar.</p>
+        <p className="thin">Ingresá un N° de contrato, apellido de locador o locatario para buscar.</p>
       ) : loading ? (
         <p className="thin">Buscando...</p>
       ) : displayData.length === 0 ? (
-        <p className="thin">No se encontraron impuestos para ese contrato.</p>
+        <p className="thin">No se encontraron impuestos.</p>
       ) : (
         <ScrollTopTable>
           <table style={{ borderCollapse: "collapse", width: "100%" }}>
@@ -178,7 +161,7 @@ export default function ListadoImpuestos() {
               {displayData.map((item, i) => (
                 <tr
                   key={`${item.alquilerId}-${item.fecha}-${i}`}
-                  style={{ borderBottom: "1px solid rgba(237,242,248,0.08)", transition: "background 0.15s" }}
+                  style={trStyle}
                   onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(237,242,248,0.05)")}
                   onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                 >

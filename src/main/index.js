@@ -86,8 +86,6 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window);
   });
 
-  ipcMain.on("ping", () => console.log("pong"));
-
   // =========================
   // DB GENERAL
   // =========================
@@ -127,10 +125,15 @@ app.whenReady().then(() => {
       const path = dbPath();
       const data = await readJSON(path);
       const item = data.find((e) => String(e.id) === String(alquilerId));
-      if (!item || !Array.isArray(item.montos)) return { ok: false, error: "Alquiler no encontrado" };
+      if (!item) return { ok: false, error: "Alquiler no encontrado" };
+      if (!Array.isArray(item.montos)) item.montos = [];
       const montoItem = item.montos.find((m) => Number(m.numero) === Number(numero));
-      if (!montoItem) return { ok: false, error: "Monto no encontrado" };
-      montoItem.monto = monto;
+      if (montoItem) {
+        montoItem.monto = monto;
+      } else {
+        item.montos.push({ numero: Number(numero), monto });
+        item.montos.sort((a, b) => a.numero - b.numero);
+      }
       await fs.writeFile(path, JSON.stringify(data, null, 2));
       return { ok: true };
     } catch (error) {
@@ -139,11 +142,26 @@ app.whenReady().then(() => {
     }
   });
 
+  const norm = (str) =>
+    String(str ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+
+  const alquilerMatchesQuery = (a, q) => {
+    const nq = norm(q);
+    if (!nq) return false;
+    return [
+      a.id,
+      a.locador?.apellido,
+      a.locador?.nombre,
+      a.locatario?.apellido,
+      a.locatario?.nombre,
+    ].some((f) => norm(f).includes(nq));
+  };
+
   ipcMain.handle("db:filtrarPorId", async (_, query) => {
     const data = await readJSON(dbPath());
-    const q = String(query ?? "").trim();
+    const q = String(query ?? "").trim().toLowerCase();
     if (!q) return [];
-    return data.filter((a) => String(a.id ?? "").includes(q));
+    return data.filter((a) => alquilerMatchesQuery(a, q));
   });
 
   // =========================
@@ -168,10 +186,11 @@ app.whenReady().then(() => {
   });
 
   ipcMain.handle("recibos:buscarPorContrato", async (_, query) => {
-    const data = await readJSON(recibosPath());
-    const q = String(query ?? "").trim();
+    const q = String(query ?? "").trim().toLowerCase();
     if (!q) return [];
-    return data.filter((r) => String(r.alquilerId ?? r.id ?? "").includes(q));
+    const [recibos, alquileres] = await Promise.all([readJSON(recibosPath()), readJSON(dbPath())]);
+    const ids = new Set(alquileres.filter((a) => alquilerMatchesQuery(a, q)).map((a) => String(a.id)));
+    return recibos.filter((r) => ids.has(String(r.alquilerId ?? r.id ?? "")));
   });
 
   // =========================
@@ -196,10 +215,11 @@ app.whenReady().then(() => {
   });
 
   ipcMain.handle("impuestos:buscarPorContrato", async (_, query) => {
-    const data = await readJSON(impuestosPath());
-    const q = String(query ?? "").trim();
+    const q = String(query ?? "").trim().toLowerCase();
     if (!q) return [];
-    return data.filter((i) => String(i.alquilerId ?? "").includes(q));
+    const [impuestos, alquileres] = await Promise.all([readJSON(impuestosPath()), readJSON(dbPath())]);
+    const ids = new Set(alquileres.filter((a) => alquilerMatchesQuery(a, q)).map((a) => String(a.id)));
+    return impuestos.filter((i) => ids.has(String(i.alquilerId ?? "")));
   });
 
   // =========================
@@ -224,10 +244,11 @@ app.whenReady().then(() => {
   });
 
   ipcMain.handle("papel-rosa:buscarPorContrato", async (_, query) => {
-    const data = await readJSON(papelRosaPath());
-    const q = String(query ?? "").trim();
+    const q = String(query ?? "").trim().toLowerCase();
     if (!q) return [];
-    return data.filter((p) => String(p.alquilerId ?? "").includes(q));
+    const [papelRosa, alquileres] = await Promise.all([readJSON(papelRosaPath()), readJSON(dbPath())]);
+    const ids = new Set(alquileres.filter((a) => alquilerMatchesQuery(a, q)).map((a) => String(a.id)));
+    return papelRosa.filter((p) => ids.has(String(p.alquilerId ?? "")));
   });
 
   createWindow();

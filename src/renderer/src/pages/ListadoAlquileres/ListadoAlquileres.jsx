@@ -1,27 +1,21 @@
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ConfirmModal from "../../components/ConfirmModal";
-import ScrollTopTable from "../../components/ScrollTopTable/ScrollTopTable.jsx";
+import { alquilerMatchesQuery } from "../../utils/search.js";
+import { fmtDate, fmtNum, calcTotalPeriodos } from "../../utils/formatters.js";
 
-const fmt = (value) => {
-  if (!value && value !== 0) return "-";
-  return Number(value).toLocaleString("es-AR");
+const fmt = fmtNum;
+
+const fmtPrice = (v) => {
+  if (v === "" || v == null) return "";
+  const n = Number(String(v).replace(/\./g, "").replace(",", "."));
+  if (isNaN(n)) return String(v);
+  return n.toLocaleString("es-AR");
 };
 
-const fmtDate = (value) => {
-  if (!value) return "-";
-  return new Date(value + "T00:00:00").toLocaleDateString("es-AR");
-};
+const parsePrice = (str) =>
+  Number(String(str ?? "").replace(/\./g, "").replace(",", ".")) || 0;
 
-const selectStyle = {
-  background: "rgba(237,242,248,0.08)",
-  color: "rgb(237,242,248)",
-  border: "1px solid rgba(237,242,248,0.2)",
-  borderRadius: "0.4em",
-  padding: "4px 8px",
-  fontSize: "0.88em",
-  cursor: "pointer",
-};
 
 const inputStyle = {
   background: "rgba(237,242,248,0.08)",
@@ -30,72 +24,175 @@ const inputStyle = {
   borderRadius: "0.4em",
   padding: "4px 8px",
   fontSize: "0.88em",
-  width: "100px",
 };
 
-const thBase = {
-  padding: "10px 14px",
-  textAlign: "left",
-  borderBottom: "1px solid rgba(237,242,248,0.2)",
-  color: "rgba(237,242,248,0.5)",
+const labelCol = {
+  color: "rgba(237,242,248,0.45)",
+  fontSize: "0.8em",
   fontWeight: 600,
-  fontSize: "0.78em",
   textTransform: "uppercase",
-  letterSpacing: "0.05em",
+  letterSpacing: "0.04em",
   whiteSpace: "nowrap",
-  userSelect: "none",
+  paddingTop: 2,
 };
 
-const tdStyle = {
-  padding: "10px 14px",
+const valueCol = {
   color: "rgb(237,242,248)",
-  fontWeight: 500,
   fontSize: "0.9em",
-  whiteSpace: "nowrap",
+  wordBreak: "break-word",
 };
 
-// ── tipos de filtro por columna ───────────────────────────────────────────────
-// "sort"   → alterna asc/desc al hacer click
-// "search" → muestra un input de texto debajo del header
-// "none"   → sin filtro
+const sectionLabel = {
+  color: "rgba(237,242,248,0.35)",
+  fontSize: "0.72em",
+  fontWeight: 700,
+  textTransform: "uppercase",
+  letterSpacing: "0.06em",
+  gridColumn: "1 / -1",
+  paddingTop: 4,
+};
 
-const COLS = [
-  { key: "id",              label: "N°",              filter: "sort",   getValue: (a) => a.id },
-  { key: "locador_ap",     label: "Locador Ap.",      filter: "search", getValue: (a) => a.locador?.apellido || "" },
-  { key: "locador_nom",    label: "Locador Nom.",     filter: "search", getValue: (a) => a.locador?.nombre   || "" },
-  { key: "locatario_ap",   label: "Locatario Ap.",    filter: "search", getValue: (a) => a.locatario?.apellido || "" },
-  { key: "locatario_nom",  label: "Locatario Nom.",   filter: "search", getValue: (a) => a.locatario?.nombre   || "" },
-  { key: "fecha_inicio",   label: "Inicio",           filter: "sort",   getValue: (a) => a.fecha_inicio || "" },
-  { key: "fecha_fin",      label: "Fin",              filter: "sort",   getValue: (a) => a.fecha_fin    || "" },
-  { key: "montos",         label: "Montos",           filter: "none",   getValue: null },
-  { key: "honorario",      label: "Honorario",        filter: "none",   getValue: (a) => a.honorario ? `${a.honorario}%` : "-" },
-  { key: "indice",         label: "Índice",           filter: "none",   getValue: (a) => a.indice || "-" },
-  { key: "actualizacion",  label: "Actualiz.",        filter: "none",   getValue: (a) => a.actualizacion_meses ? `${a.actualizacion_meses}m` : "-" },
-  { key: "agip",           label: "AGIP",             filter: "none",   getValue: (a) => a.impuestos?.AGIP     != null ? String(a.impuestos.AGIP)     : "-" },
-  { key: "metrogas",       label: "Metrogas",         filter: "none",   getValue: (a) => a.impuestos?.METROGAS != null ? String(a.impuestos.METROGAS) : "-" },
-  { key: "edesur",         label: "Edesur",           filter: "none",   getValue: (a) => a.impuestos?.EDESUR   != null ? String(a.impuestos.EDESUR)   : "-" },
-  { key: "aysa",           label: "AYSA",             filter: "none",   getValue: (a) => a.impuestos?.AYSA     != null ? String(a.impuestos.AYSA)     : "-" },
-  { key: "editar",         label: "Editar",           filter: "none",   getValue: null },
-];
+const divider = {
+  gridColumn: "1 / -1",
+  borderTop: "1px solid rgba(237,242,248,0.08)",
+  margin: "4px 0",
+};
 
-const initialSorts  = Object.fromEntries(COLS.filter((c) => c.filter === "sort").map((c) => [c.key, null]));
-const initialSearch = Object.fromEntries(COLS.filter((c) => c.filter === "search").map((c) => [c.key, ""]));
+function AlquilerCard({ item, getMontoDisplay, handleMontoChange, handleMontoBlur, handleMontoSave, navRef }) {
+  const total    = calcTotalPeriodos(item.fecha_inicio, item.fecha_fin, item.actualizacion_meses);
+  const allNums  = total
+    ? Array.from({ length: total }, (_, i) => i + 1)
+    : (item.montos?.length ? item.montos.map((m) => m.numero) : null);
+
+  const filledCount = allNums?.filter((num) => {
+    const m = item.montos?.find((x) => x.numero === num);
+    return m != null && m.monto != null;
+  }).length ?? 0;
+
+  const mainRows = [
+    { label: "Locador",    value: `${item.locador?.apellido ?? "-"}, ${item.locador?.nombre ?? "-"}` },
+    { label: "Locatario",  value: `${item.locatario?.apellido ?? "-"}, ${item.locatario?.nombre ?? "-"}` },
+    { label: "Inmueble",   value: item.inmueble?.direccion || "-" },
+    { label: "Inicio",     value: fmtDate(item.fecha_inicio) },
+    { label: "Fin",        value: fmtDate(item.fecha_fin) },
+    { label: "Actualiz.",  value: item.actualizacion_meses ? `${item.actualizacion_meses} meses` : "-" },
+    { label: "Índice",     value: item.indice || "-" },
+    { label: "Honorario",  value: item.honorario ? `${item.honorario}%` : "-" },
+    { label: "Depósito",   value: item.deposito_garantia ? `$${fmt(item.deposito_garantia)}` : "-" },
+  ];
+
+  const impRows = [
+    { label: "AGIP",     value: item.impuestos?.AGIP     != null ? String(item.impuestos.AGIP)     : "-" },
+    { label: "AYSA",     value: item.impuestos?.AYSA     != null ? String(item.impuestos.AYSA)     : "-" },
+    { label: "Metrogas", value: item.impuestos?.METROGAS != null ? String(item.impuestos.METROGAS) : "-" },
+    { label: "Edesur",   value: item.impuestos?.EDESUR   != null ? String(item.impuestos.EDESUR)   : "-" },
+  ];
+
+  return (
+    <div style={{
+      background: "rgba(237,242,248,0.04)",
+      border: "1px solid rgba(237,242,248,0.1)",
+      borderRadius: "0.7em",
+      padding: "18px 22px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 0,
+    }}>
+      {/* Encabezado */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <span style={{ fontWeight: 700, fontSize: "1.05em", color: "rgb(237,242,248)" }}>
+          Contrato #{item.id}
+        </span>
+        <button
+          type="button"
+          onClick={() => navRef.current("/nuevoAlquiler", { state: { editId: item.id } })}
+        >
+          Editar
+        </button>
+      </div>
+
+      {/* Grid de 2 columnas: label | valor */}
+      <div style={{ display: "grid", gridTemplateColumns: "max-content 1fr", gap: "8px 24px" }}>
+
+        {/* Datos principales */}
+        {mainRows.map(({ label, value }) => (
+          <Fragment key={label}>
+            <span style={labelCol}>{label}</span>
+            <span style={valueCol}>{value}</span>
+          </Fragment>
+        ))}
+
+        {/* Separador impuestos */}
+        <div style={divider} />
+        <span style={sectionLabel}>Impuestos</span>
+
+        {impRows.map(({ label, value }) => (
+          <Fragment key={label}>
+            <span style={labelCol}>{label}</span>
+            <span style={valueCol}>{value}</span>
+          </Fragment>
+        ))}
+
+        {/* Separador montos */}
+        {allNums && (
+          <>
+            <div style={divider} />
+            <span style={sectionLabel}>
+              Montos{total != null ? ` — ${filledCount}/${total}` : ""}
+              {total != null && filledCount < total && (
+                <span style={{ color: "rgba(255,180,50,0.8)", marginLeft: 6 }}>incompleto</span>
+              )}
+            </span>
+
+            {/* Montos: fuera del grid de 2 cols, en columna completa */}
+            <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: 6, marginTop: 2 }}>
+              {allNums.map((num) => (
+                <div key={num} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ ...labelCol, minWidth: 58 }}>Monto {num}</span>
+                  <span style={{ color: "rgba(237,242,248,0.4)", fontSize: "0.85em" }}>$</span>
+                  <input
+                    type="text"
+                    style={{ ...inputStyle, width: 110, textAlign: "right" }}
+                    value={getMontoDisplay(item, num)}
+                    placeholder="-"
+                    onChange={(e) => handleMontoChange(item.id, num, e.target.value)}
+                    onBlur={() => handleMontoBlur(item, num)}
+                  />
+                  <button
+                    type="button"
+                    style={{ padding: "2px 8px", fontSize: "0.8em" }}
+                    onClick={() => handleMontoSave(item, num)}
+                  >
+                    ✓
+                  </button>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function ListadoAlquileres() {
-  const [data, setData]                   = useState([]);
+  const [allData, setAllData]             = useState([]);
+  const [results, setResults]             = useState([]);
   const [loading, setLoading]             = useState(false);
   const [showVolver, setShowVolver]       = useState(false);
   const [montoEdits, setMontoEdits]       = useState({});
-  const [searchIdInput, setSearchIdInput] = useState("");
-  const [searchId, setSearchId]           = useState("");
-  // sortOrder: array de { key, dir } en orden de prioridad (primero = más importante)
-  const [sortOrder, setSortOrder] = useState([]);
-  const [searches, setSearches]   = useState(initialSearch);
-  const navigate = useNavigate();
-  const navRef   = useRef(navigate);
+  const [searchInput, setSearchInput]     = useState("");
+  const [searched, setSearched]           = useState(false);
+  const [showAll, setShowAll]             = useState(false);
+  const navigate  = useNavigate();
+  const navRef    = useRef(navigate);
   const firstInputRef = useRef(null);
   useEffect(() => { navRef.current = navigate; });
   useEffect(() => { firstInputRef.current?.focus(); }, []);
+
+  useEffect(() => {
+    window.store.loadDB().then((db) => setAllData(Array.isArray(db) ? db : []));
+  }, []);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -106,51 +203,64 @@ export default function ListadoAlquileres() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const handleSearch = async () => {
-    const query = searchIdInput.trim();
+  const handleSearch = () => {
+    const query = searchInput.trim();
     if (!query) return;
-    setSearchId(query);
     setLoading(true);
-    try {
-      const results = await window.store.filtrarAlquileresPorId(query);
-      setData(Array.isArray(results) ? results : []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+    setShowAll(false);
+    setResults(allData.filter((a) => alquilerMatchesQuery(a, query)));
+    setSearched(true);
+    setLoading(false);
+  };
+
+  const handleVerTodos = () => {
+    setShowAll(true);
+    setSearched(false);
+    setResults([]);
+    setSearchInput("");
   };
 
   // ── monto helpers ─────────────────────────────────────────────────────────
 
-  const getMontoEdit = (a) => {
-    const edit = montoEdits[a.id];
-    if (edit) return edit;
-    const primero = a.montos?.[0];
-    return { numero: primero?.numero ?? "", value: primero?.monto ?? "" };
+  const getMontoDisplay = (item, numero) => {
+    const key = `${item.id}_${numero}`;
+    if (key in montoEdits) return montoEdits[key];
+    const m = item.montos?.find((x) => x.numero === numero);
+    return m?.monto != null ? fmtPrice(m.monto) : "";
   };
 
-  const handleMontoSelect = (a, numero) => {
-    const encontrado = a.montos.find((m) => String(m.numero) === String(numero));
-    setMontoEdits((prev) => ({ ...prev, [a.id]: { numero, value: encontrado?.monto ?? "" } }));
+  const handleMontoChange = (itemId, numero, val) => {
+    const cleaned = val.replace(/[^0-9.,]/g, "");
+    setMontoEdits((prev) => ({ ...prev, [`${itemId}_${numero}`]: cleaned }));
   };
 
-  const handleMontoValueChange = (a, value) => {
-    setMontoEdits((prev) => ({ ...prev, [a.id]: { ...getMontoEdit(a), value } }));
+  const handleMontoBlur = (item, numero) => {
+    const key = `${item.id}_${numero}`;
+    if (!(key in montoEdits)) return;
+    const v = parsePrice(montoEdits[key] ?? "");
+    if (v) {
+      setMontoEdits((prev) => ({ ...prev, [key]: fmtPrice(v) }));
+    } else {
+      setMontoEdits((prev) => { const c = { ...prev }; delete c[key]; return c; });
+    }
   };
 
-  const handleMontoSave = async (a) => {
-    const edit = getMontoEdit(a);
-    if (!edit.numero) return;
+  const handleMontoSave = async (item, numero) => {
+    const display = getMontoDisplay(item, numero);
+    const value   = parsePrice(display);
     try {
-      const res = await window.store.updateMonto(a.id, Number(edit.numero), Number(edit.value));
+      const res = await window.store.updateMonto(item.id, numero, value);
       if (!res?.ok) { alert("Error al guardar el monto"); return; }
-      setData((prev) =>
-        prev.map((item) =>
-          item.id === a.id
-            ? { ...item, montos: item.montos.map((m) => m.numero === Number(edit.numero) ? { ...m, monto: Number(edit.value) } : m) }
-            : item
-        )
+      setMontoEdits((prev) => ({ ...prev, [`${item.id}_${numero}`]: fmtPrice(value) }));
+      setResults((prev) =>
+        prev.map((i) => {
+          if (i.id !== item.id) return i;
+          const existing = i.montos?.find((m) => m.numero === numero);
+          const newMontos = existing
+            ? i.montos.map((m) => m.numero === numero ? { ...m, monto: value } : m)
+            : [...(i.montos ?? []), { numero, monto: value }].sort((a, b) => a.numero - b.numero);
+          return { ...i, montos: newMontos };
+        })
       );
     } catch (err) {
       console.error(err);
@@ -158,90 +268,7 @@ export default function ListadoAlquileres() {
     }
   };
 
-  // ── filtros ───────────────────────────────────────────────────────────────
-
-  // Click: asc → desc → quitar. Si no estaba, se agrega al final (menor prioridad).
-  const handleSortClick = (key) => {
-    setSortOrder((prev) => {
-      const existing = prev.find((s) => s.key === key);
-      if (!existing) return [...prev, { key, dir: "asc" }];
-      if (existing.dir === "asc") return prev.map((s) => s.key === key ? { ...s, dir: "desc" } : s);
-      return prev.filter((s) => s.key !== key);
-    });
-  };
-
-  const handleSearchChange = (key, val) => {
-    setSearches((prev) => ({ ...prev, [key]: val }));
-  };
-
-  // aplicar búsquedas de texto (data ya está filtrada por id en el backend)
-  let rows = searchId.trim() === "" ? [] : data.filter((a) =>
-    COLS.filter((c) => c.filter === "search").every((c) => {
-      const q = searches[c.key].trim().toLowerCase();
-      if (!q) return true;
-      return c.getValue(a).toLowerCase().includes(q);
-    })
-  );
-
-  // aplicar ordenamientos en orden de prioridad (el primero clickeado es el primario)
-  if (sortOrder.length) {
-    const colMap = Object.fromEntries(COLS.map((c) => [c.key, c]));
-    rows = [...rows].sort((a, b) => {
-      for (const { key, dir } of sortOrder) {
-        const col = colMap[key];
-        if (!col?.getValue) continue;
-        const cmp = String(col.getValue(a)).localeCompare(String(col.getValue(b)), "es", { numeric: true });
-        if (cmp !== 0) return dir === "asc" ? cmp : -cmp;
-      }
-      return 0;
-    });
-  }
-
   // ── render ────────────────────────────────────────────────────────────────
-
-  const renderCell = (col, item) => {
-    if (col.key === "montos") {
-      if (!item.montos?.length) return `$${fmt(item.monto_inicial)}`;
-      const edit = getMontoEdit(item);
-      return (
-        <div className="flex items-center gap-2">
-          <select style={selectStyle} value={edit.numero} onChange={(e) => handleMontoSelect(item, e.target.value)}>
-            {item.montos.map((m) => (
-              <option key={m.numero} value={m.numero} style={{ color: "rgb(14,25,37)" }}>
-                {`Monto N°${m.numero}`}
-              </option>
-            ))}
-          </select>
-          <input
-            type="number"
-            style={inputStyle}
-            value={edit.value}
-            placeholder="Monto"
-            onChange={(e) => handleMontoValueChange(item, e.target.value)}
-          />
-          <button type="button" onClick={() => handleMontoSave(item)}>Guardar</button>
-        </div>
-      );
-    }
-    if (col.key === "editar") {
-      return (
-        <button type="button" onClick={() => navRef.current("/nuevoAlquiler", { state: { editId: item.id } })}>
-          Editar
-        </button>
-      );
-    }
-    if (col.key === "fecha_inicio") return fmtDate(item.fecha_inicio);
-    if (col.key === "fecha_fin")    return fmtDate(item.fecha_fin);
-    return col.getValue ? col.getValue(item) || "-" : "-";
-  };
-
-  const sortIcon = (key) => {
-    const s = sortOrder.find((x) => x.key === key);
-    const idx = sortOrder.findIndex((x) => x.key === key);
-    if (!s) return " ↕";
-    const num = sortOrder.length > 1 ? `${idx + 1}` : "";
-    return s.dir === "asc" ? ` ↑${num}` : ` ↓${num}`;
-  };
 
   return (
     <div className="montserrat flex flex-col gap-5">
@@ -251,17 +278,18 @@ export default function ListadoAlquileres() {
       </div>
 
       <div className="flex items-center gap-2">
-        <label style={{ color: "rgba(237,242,248,0.6)", fontSize: "0.85em" }}>N° Contrato:</label>
+        <label style={{ color: "rgba(237,242,248,0.6)", fontSize: "0.85em" }}>Buscar:</label>
         <input
           ref={firstInputRef}
           type="text"
-          value={searchIdInput}
-          onChange={(e) => setSearchIdInput(e.target.value)}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-          placeholder="Buscar..."
-          style={{ width: 120 }}
+          placeholder="N° contrato exacto, o apellido / nombre"
+          style={{ width: 260 }}
         />
         <button type="button" onClick={handleSearch}>Buscar</button>
+        <button type="button" onClick={handleVerTodos}>Ver todos</button>
       </div>
 
       <ConfirmModal open={showVolver} onConfirm={() => navRef.current("/")} onCancel={() => setShowVolver(false)}>
@@ -274,63 +302,54 @@ export default function ListadoAlquileres() {
         </div>
       </ConfirmModal>
 
-      {searchId.trim() === "" ? (
-        <p className="thin">Ingresá un N° de contrato para buscar.</p>
-      ) : loading ? (
-        <p className="thin">Buscando...</p>
-      ) : rows.length === 0 ? (
-        <p className="thin">No se encontraron alquileres para ese contrato.</p>
-      ) : (
-        <ScrollTopTable>
-          <table style={{ borderCollapse: "collapse", width: "100%" }}>
+      {showAll ? (
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85em" }}>
             <thead>
-              <tr>
-                {COLS.map((col) => (
-                  <th
-                    key={col.key}
-                    style={{
-                      ...thBase,
-                      cursor: col.filter !== "none" ? "pointer" : "default",
-                    }}
-                    onClick={() => col.filter === "sort" && handleSortClick(col.key)}
-                  >
-                    {col.label}
-                    {col.filter === "sort" && sortIcon(col.key)}
-                  </th>
+              <tr style={{ borderBottom: "1px solid rgba(237,242,248,0.15)" }}>
+                {["N°", "Locador", "Locatario", "Inmueble", "Inicio", "Fin"].map((h) => (
+                  <th key={h} style={{ textAlign: "left", padding: "6px 12px", color: "rgba(237,242,248,0.45)", fontWeight: 600, textTransform: "uppercase", fontSize: "0.75em", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
                 ))}
-              </tr>
-              <tr>
-                {COLS.map((col) => (
-                  <td key={col.key} style={{ padding: "4px 14px 8px" }}>
-                    {col.filter === "search" && (
-                      <input
-                        type="text"
-                        value={searches[col.key]}
-                        onChange={(e) => handleSearchChange(col.key, e.target.value)}
-                        placeholder="Buscar…"
-                        style={{ ...inputStyle, width: "100%", minWidth: 80 }}
-                      />
-                    )}
-                  </td>
-                ))}
+                <th style={{ padding: "6px 12px" }} />
               </tr>
             </thead>
             <tbody>
-              {rows.map((item, i) => (
-                <tr
-                  key={item.id ?? i}
-                  style={{ borderBottom: "1px solid rgba(237,242,248,0.08)", transition: "background 0.15s" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(237,242,248,0.05)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                >
-                  {COLS.map((col) => (
-                    <td key={col.key} style={tdStyle}>{renderCell(col, item)}</td>
-                  ))}
+              {allData.map((item) => (
+                <tr key={item.id} style={{ borderBottom: "1px solid rgba(237,242,248,0.06)" }}>
+                  <td style={{ padding: "8px 12px", color: "rgb(237,242,248)", fontWeight: 600 }}>{item.id}</td>
+                  <td style={{ padding: "8px 12px", color: "rgb(237,242,248)" }}>{item.locador?.apellido || "-"}, {item.locador?.nombre || "-"}</td>
+                  <td style={{ padding: "8px 12px", color: "rgb(237,242,248)" }}>{item.locatario?.apellido || "-"}, {item.locatario?.nombre || "-"}</td>
+                  <td style={{ padding: "8px 12px", color: "rgba(237,242,248,0.65)" }}>{item.inmueble?.direccion || "-"}</td>
+                  <td style={{ padding: "8px 12px", color: "rgba(237,242,248,0.65)", whiteSpace: "nowrap" }}>{fmtDate(item.fecha_inicio)}</td>
+                  <td style={{ padding: "8px 12px", color: "rgba(237,242,248,0.65)", whiteSpace: "nowrap" }}>{fmtDate(item.fecha_fin)}</td>
+                  <td style={{ padding: "8px 12px" }}>
+                    <button type="button" style={{ fontSize: "0.8em", padding: "2px 8px" }} onClick={() => navRef.current("/nuevoAlquiler", { state: { editId: item.id } })}>Editar</button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </ScrollTopTable>
+        </div>
+      ) : !searched ? (
+        <p className="thin">Ingresá un N° de contrato exacto, o apellido / nombre para buscar.</p>
+      ) : loading ? (
+        <p className="thin">Buscando...</p>
+      ) : results.length === 0 ? (
+        <p className="thin">No se encontraron alquileres.</p>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {results.map((item) => (
+            <AlquilerCard
+              key={item.id}
+              item={item}
+              getMontoDisplay={getMontoDisplay}
+              handleMontoChange={handleMontoChange}
+              handleMontoBlur={handleMontoBlur}
+              handleMontoSave={handleMontoSave}
+              navRef={navRef}
+            />
+          ))}
+        </div>
       )}
     </div>
   );

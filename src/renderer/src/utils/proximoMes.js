@@ -1,3 +1,8 @@
+export function addMonths({ year, month }, n) {
+  const total = year * 12 + month + n;
+  return { year: Math.floor(total / 12), month: ((total % 12) + 12) % 12 };
+}
+
 // Calcula el mes siguiente al actual.
 // Devuelve { year, month } donde month es 0-indexed (como JS Date).
 export function getNextMonth() {

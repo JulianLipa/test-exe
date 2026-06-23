@@ -4,10 +4,13 @@ import ConfirmModal from "../../components/ConfirmModal";
 import PrinterIcon from "../../components/PrinterIcon";
 import PapelRosaImprimir from "./PapelRosaImprimir";
 import { formatCurrency, parseCurrencyInput } from "../ReciboAlquiler/components/form.utils";
+import { alquilerMatchesQuery } from "../../utils/search.js";
+import { fmtDate } from "../../utils/formatters.js";
+import ContratoModal from "../../components/ContratoModal.jsx";
+import RecibosImpuestosModal from "../../components/RecibosImpuestosModal.jsx";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
-const fmtDate = (v) => (v ? new Date(v + "T00:00:00").toLocaleDateString("es-AR") : "-");
 const num = (v) => Number(String(v).replace(/[^\d]/g, "")) || 0;
 
 const IMPUESTO_LABELS = {
@@ -57,6 +60,10 @@ export default function PapelRosa() {
   const [lastImpuesto, setLastImpuesto]   = useState(null);
   const [lastRecibo, setLastRecibo]       = useState(null);
   const [notFound, setNotFound]           = useState(false);
+  const [resultados, setResultados]       = useState([]);
+  const [showModal, setShowModal]                   = useState(false);
+  const [showRecibosModal, setShowRecibosModal]     = useState(false);
+  const [showImpuestosModal, setShowImpuestosModal] = useState(false);
 
   // form
   const [apellidoDueno, setApellidoDueno] = useState("");
@@ -85,36 +92,26 @@ export default function PapelRosa() {
 
   // ── buscar contrato ─────────────────────────────────────────────────────────
 
-  const handleBuscar = async () => {
-    if (!contratoInput.trim()) return;
-    setNotFound(false);
-    setAlquiler(null);
-    setLastImpuesto(null);
-    setLastRecibo(null);
-
+  const aplicarAlquiler = async (alq) => {
     try {
-      const [alquileres, impuestos, recibos] = await Promise.all([
-        window.store.loadDB(),
+      const [impuestos, recibos] = await Promise.all([
         window.store.getImpuestos(),
         window.store.getRecibos(),
       ]);
-
-      const alq = alquileres.find((a) => String(a.id) === contratoInput.trim());
-      if (!alq) { setNotFound(true); return; }
-
+      const alqIdStr = String(alq.id);
       const impDe = impuestos
-        .filter((i) => String(i.alquilerId) === contratoInput.trim())
+        .filter((i) => String(i.alquilerId) === alqIdStr)
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
       const recDe = recibos
-        .filter((r) => String(r.alquilerId ?? r.id) === contratoInput.trim())
+        .filter((r) => String(r.alquilerId ?? r.id) === alqIdStr)
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
       setAlquiler(alq);
       setLastImpuesto(impDe[0] || null);
       setLastRecibo(recDe[0] || null);
+      setResultados([]);
+      setNotFound(false);
 
-      // pre-llenar campos
       setApellidoDueno(alq.locador?.apellido || "");
       if (recDe[0]) {
         const imp = Number(recDe[0].importe) || 0;
@@ -123,6 +120,24 @@ export default function PapelRosa() {
         setHonorarios(String(Math.round(imp * honPct / 100)));
         setPeriodo(recDe[0].periodo || "");
       }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleBuscar = async () => {
+    if (!contratoInput.trim()) return;
+    setNotFound(false);
+    setAlquiler(null);
+    setLastImpuesto(null);
+    setLastRecibo(null);
+    setResultados([]);
+    try {
+      const alquileres = await window.store.loadDB();
+      const matches = alquileres.filter((a) => alquilerMatchesQuery(a, contratoInput.trim()));
+      if (matches.length === 0) { setNotFound(true); return; }
+      if (matches.length === 1) { await aplicarAlquiler(matches[0]); return; }
+      setResultados(matches);
     } catch (err) {
       console.error(err);
     }
@@ -169,7 +184,7 @@ export default function PapelRosa() {
 
   const confirmSave = async () => {
     const payload = {
-      alquilerId: Number(contratoInput),
+      alquilerId: alquiler?.id,
       locador: alquiler?.locador,
       locatario: alquiler?.locatario,
       inmueble: alquiler?.inmueble,
@@ -206,6 +221,10 @@ export default function PapelRosa() {
     setAlquiler(null);
     setLastImpuesto(null);
     setLastRecibo(null);
+    setResultados([]);
+    setShowModal(false);
+    setShowRecibosModal(false);
+    setShowImpuestosModal(false);
     setApellidoDueno("");
     setPeriodo("");
     setMontoTotal("");
@@ -231,14 +250,14 @@ export default function PapelRosa() {
 
       {/* búsqueda */}
       <div className="flex items-center gap-3">
-        <label style={labelStyle}>N° Contrato</label>
+        <label style={labelStyle}>Buscar</label>
         <input
           type="text"
           value={contratoInput}
           onChange={(e) => setContratoInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleBuscar()}
-          style={{ width: 120 }}
-          placeholder="Ej: 12"
+          style={{ width: 240 }}
+          placeholder="N° contrato exacto o apellido/nombre"
           autoFocus
         />
         <button type="button" onClick={handleBuscar}>Buscar</button>
@@ -246,9 +265,70 @@ export default function PapelRosa() {
 
       {notFound && (
         <p style={{ color: "#f87171", fontSize: "0.9em" }}>
-          No se encontró el contrato N° {contratoInput}.
+          No se encontró ningún contrato para "{contratoInput}".
         </p>
       )}
+
+      {resultados.length > 1 && (
+        <div className="flex flex-col gap-2">
+          <p style={{ fontSize: "0.85em", color: "rgba(237,242,248,0.6)" }}>
+            Se encontraron {resultados.length} contratos. Seleccioná uno:
+          </p>
+          <div className="flex gap-3 flex-wrap">
+            {resultados.map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => aplicarAlquiler(a)}
+                style={{
+                  background: "rgba(237,242,248,0.06)",
+                  border: "1px solid rgba(237,242,248,0.15)",
+                  borderRadius: "0.5em",
+                  padding: "10px 14px",
+                  textAlign: "left",
+                  color: "rgb(237,242,248)",
+                  cursor: "pointer",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 3,
+                }}
+              >
+                <span style={{ fontWeight: 700, fontSize: "0.9em" }}>N° {a.id}</span>
+                <span style={{ fontSize: "0.8em", color: "rgba(237,242,248,0.75)" }}>
+                  <span style={{ opacity: 0.55 }}>Locador: </span>{a.locador?.apellido || "-"}, {a.locador?.nombre || "-"}
+                </span>
+                <span style={{ fontSize: "0.8em", color: "rgba(237,242,248,0.75)" }}>
+                  <span style={{ opacity: 0.55 }}>Locatario: </span>{a.locatario?.apellido || "-"}, {a.locatario?.nombre || "-"}
+                </span>
+                {a.inmueble?.direccion && (
+                  <span style={{ fontSize: "0.75em", color: "rgba(237,242,248,0.4)" }}>{a.inmueble.direccion}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {alquiler && (
+        <div className="flex items-center gap-3" style={{ flexWrap: "wrap" }}>
+          <span style={{ fontSize: "0.88em", color: "rgba(237,242,248,0.6)" }}>
+            Contrato #{alquiler.id} — {alquiler.locador?.apellido} / {alquiler.locatario?.apellido}
+          </span>
+          <button type="button" style={{ fontSize: "0.82em", padding: "3px 10px" }} onClick={() => setShowModal(true)}>
+            Ver datos del contrato
+          </button>
+          <button type="button" style={{ fontSize: "0.82em", padding: "3px 10px" }} onClick={() => setShowRecibosModal(true)}>
+            Ver recibos
+          </button>
+          <button type="button" style={{ fontSize: "0.82em", padding: "3px 10px" }} onClick={() => setShowImpuestosModal(true)}>
+            Ver impuestos
+          </button>
+        </div>
+      )}
+
+      {showModal && <ContratoModal alquiler={alquiler} onClose={() => setShowModal(false)} />}
+      {showRecibosModal && <RecibosImpuestosModal alquiler={alquiler} mode="recibos" onClose={() => setShowRecibosModal(false)} />}
+      {showImpuestosModal && <RecibosImpuestosModal alquiler={alquiler} mode="impuestos" onClose={() => setShowImpuestosModal(false)} />}
 
       {/* datos encontrados */}
       {alquiler && (

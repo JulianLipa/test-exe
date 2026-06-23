@@ -6,28 +6,9 @@ import PapelRosaImprimir from "../PapelRosa/PapelRosaImprimir";
 import PrinterIcon from "../../components/PrinterIcon";
 import { formatCurrency } from "../ReciboAlquiler/components/form.utils";
 import ScrollTopTable from "../../components/ScrollTopTable/ScrollTopTable.jsx";
-
-const fmtDate = (v) => (v ? new Date(v + "T00:00:00").toLocaleDateString("es-AR") : "-");
-
-const thStyle = {
-  padding: "10px 14px",
-  textAlign: "left",
-  borderBottom: "1px solid rgba(237,242,248,0.2)",
-  color: "rgba(237,242,248,0.5)",
-  fontWeight: 600,
-  fontSize: "0.78em",
-  textTransform: "uppercase",
-  letterSpacing: "0.05em",
-  whiteSpace: "nowrap",
-};
-
-const tdStyle = {
-  padding: "10px 14px",
-  color: "rgb(237,242,248)",
-  fontWeight: 500,
-  fontSize: "0.9em",
-  whiteSpace: "nowrap",
-};
+import { alquilerMatchesQuery } from "../../utils/search.js";
+import { fmtDate } from "../../utils/formatters.js";
+import { thStyle, tdStyle, trStyle } from "../../utils/tableStyles.js";
 
 export default function ListadoPapelRosa() {
   const [data, setData]               = useState([]);
@@ -58,8 +39,14 @@ export default function ListadoPapelRosa() {
     setSearch(query);
     setLoading(true);
     try {
-      const list = await window.store.searchPapelRosaPorContrato(query);
-      setData(Array.isArray(list) ? list : []);
+      const [todoPapel, todosAlquileres] = await Promise.all([
+        window.store.getPapelRosa(),
+        window.store.loadDB(),
+      ]);
+      const matchingIds = new Set(
+        todosAlquileres.filter((a) => alquilerMatchesQuery(a, query)).map((a) => String(a.id))
+      );
+      setData((todoPapel ?? []).filter((p) => matchingIds.has(String(p.alquilerId ?? ""))));
     } catch (err) {
       console.error(err);
     } finally {
@@ -94,32 +81,36 @@ export default function ListadoPapelRosa() {
 
       <div className="flex items-center gap-4" style={{ flexWrap: "wrap" }}>
         <div className="flex items-center gap-2">
-          <label style={{ color: "rgba(237,242,248,0.6)", fontSize: "0.85em" }}>N° Contrato:</label>
+          <label style={{ color: "rgba(237,242,248,0.6)", fontSize: "0.85em" }}>Buscar:</label>
           <input
             ref={firstInputRef}
             type="text"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            placeholder="Buscar..."
-            style={{ width: 120 }}
+            placeholder="N° contrato, ap. locador o locatario"
+            style={{ width: 220 }}
           />
           <button type="button" onClick={handleSearch}>Buscar</button>
         </div>
         <div className="flex items-center gap-2">
           <label style={{ color: "rgba(237,242,248,0.6)", fontSize: "0.85em" }}>Fecha:</label>
-          <button type="button" onClick={() => setDateSort((s) => s === "asc" ? "desc" : "asc")} style={{ minWidth: 110 }}>
+          <button
+            type="button"
+            onClick={() => setDateSort((s) => (s === "asc" ? "desc" : "asc"))}
+            style={{ minWidth: 110 }}
+          >
             {dateSort === "asc" ? "↑ Más antigua" : "↓ Más reciente"}
           </button>
         </div>
       </div>
 
       {search.trim() === "" ? (
-        <p className="thin">Ingresá un N° de contrato para buscar.</p>
+        <p className="thin">Ingresá un N° de contrato, apellido de locador o locatario para buscar.</p>
       ) : loading ? (
         <p className="thin">Buscando...</p>
       ) : rows.length === 0 ? (
-        <p className="thin">No se encontraron papeles rosa para ese contrato.</p>
+        <p className="thin">No se encontraron papeles rosa.</p>
       ) : (
         <ScrollTopTable>
           <table style={{ borderCollapse: "collapse", width: "100%" }}>
@@ -135,7 +126,7 @@ export default function ListadoPapelRosa() {
               {rows.map((item, i) => (
                 <tr
                   key={`${item.alquilerId}-${item.createdAt ?? i}`}
-                  style={{ borderBottom: "1px solid rgba(237,242,248,0.08)", transition: "background 0.15s" }}
+                  style={trStyle}
                   onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(237,242,248,0.05)")}
                   onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                 >

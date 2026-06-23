@@ -47,26 +47,6 @@ const store = {
     return state.data;
   },
 
-  searchByApellidoLocatario: async (apellidoBuscado) => {
-    try {
-      const db = await ipcRenderer.invoke("db:leer");
-
-      if (!Array.isArray(db)) return [];
-
-      return db.filter((item) => {
-        const apellido = item?.locatario?.apellido || "";
-
-        return apellido
-          .toLowerCase()
-          .trim()
-          .includes(apellidoBuscado.toLowerCase().trim());
-      });
-    } catch (err) {
-      console.error("ERROR SEARCH:", err);
-      return [];
-    }
-  },
-
   // =========================
   // 🧾 RECIBOS
   // =========================
