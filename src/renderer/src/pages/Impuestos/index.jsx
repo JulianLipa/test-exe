@@ -4,6 +4,7 @@ import ConfirmModal from "../../components/ConfirmModal";
 import AlquilerSelector from "../../components/AlquilerSelector";
 import ImpuestosImprimir from "./ImpuestosImprimir";
 import PrinterIcon from "../../components/PrinterIcon";
+import { usePrint } from "../../hooks/usePrint";
 
 const FIELDS = [
   { key: "aysaVto",         label: "AYSA VTO" },
@@ -23,6 +24,7 @@ export default function Impuestos() {
   const navigate = useNavigate();
   const navRef = useRef(navigate);
   useEffect(() => { navRef.current = navigate; });
+  const { triggerPrint, portal } = usePrint();
 
   const [alquiler, setAlquiler]       = useState(null);
   const [alquilerId, setAlquilerId]   = useState("");
@@ -67,13 +69,10 @@ export default function Impuestos() {
   };
 
   const handleImprimir = () => {
-    const el = document.querySelector(`[data-recibo-id="imp-${alquilerId}"]`);
-    if (el) el.classList.add("recibo-print--active");
-    setTimeout(() => {
-      window.print();
-      if (el) el.classList.remove("recibo-print--active");
-      navRef.current("/");
-    }, 50);
+    triggerPrint(
+      <ImpuestosImprimir form={form} alquiler={alquiler} alquilerId={alquilerId} />
+    );
+    setTimeout(() => navRef.current("/"), 400);
   };
 
   const handleNuevo = () => {
@@ -117,7 +116,7 @@ export default function Impuestos() {
           />
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 mb-4">
           <button type="submit" disabled={!alquilerId} className="disabled:opacity-50">
             Guardar
           </button>
@@ -127,7 +126,7 @@ export default function Impuestos() {
         </div>
       </form>
 
-      <ImpuestosImprimir form={form} alquiler={alquiler} alquilerId={alquilerId} />
+      {portal}
 
       {/* Confirmar guardar */}
       <ConfirmModal open={showConfirm} onConfirm={confirmSave} onCancel={() => setShowConfirm(false)}>

@@ -1,17 +1,8 @@
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { fmtDate, fmtNum } from "../utils/formatters.js";
-import { labelStyle, valueStyle, sectionLabel } from "../utils/modalStyles.js";
-
-const cardStyle = {
-  background: "rgba(237,242,248,0.04)",
-  border: "1px solid rgba(237,242,248,0.1)",
-  borderRadius: "0.6em",
-  padding: "14px 18px",
-  display: "grid",
-  gridTemplateColumns: "max-content 1fr",
-  gap: "8px 24px",
-};
+import { thStyle, tdStyle, trStyle } from "../utils/tableStyles.js";
+import ScrollTopTable from "./ScrollTopTable/ScrollTopTable.jsx";
 
 export default function RecibosImpuestosModal({ alquiler, mode, onClose }) {
   const [recibos,   setRecibos]   = useState([]);
@@ -31,6 +22,12 @@ export default function RecibosImpuestosModal({ alquiler, mode, onClose }) {
     });
   }, [alquiler]);
 
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, [onClose]);
+
   if (!alquiler) return null;
 
   return createPortal(
@@ -49,9 +46,9 @@ export default function RecibosImpuestosModal({ alquiler, mode, onClose }) {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          width: "60svw",
+          width: "80svw",
           maxHeight: "85svh",
-          overflowY: "auto",
+          overflow: "hidden",
           background: "rgb(14,25,37)",
           border: "1px solid rgba(237,242,248,0.12)",
           borderRadius: "0.8em",
@@ -59,10 +56,11 @@ export default function RecibosImpuestosModal({ alquiler, mode, onClose }) {
           display: "flex",
           flexDirection: "column",
           gap: 16,
+          boxSizing: "border-box",
         }}
       >
         {/* Encabezado */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
           <span style={{ fontWeight: 700, fontSize: "1.1em", color: "rgb(237,242,248)" }}>
             {mode === "recibos" ? "Recibos" : "Impuestos"} — Contrato #{alquiler.id}
           </span>
@@ -86,89 +84,71 @@ export default function RecibosImpuestosModal({ alquiler, mode, onClose }) {
         {loading ? (
           <p style={{ color: "rgba(237,242,248,0.45)", fontSize: "0.88em" }}>Cargando...</p>
         ) : mode === "recibos" ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <span style={{ ...sectionLabel, gridColumn: "unset", paddingTop: 0 }}>
-                Recibos ({recibos.length})
-              </span>
-              {recibos.length === 0 ? (
-                <p style={{ color: "rgba(237,242,248,0.35)", fontSize: "0.82em" }}>Sin recibos registrados.</p>
-              ) : (
-                recibos.map((r, i) => (
-                  <div key={i} style={cardStyle}>
-                    <Fragment>
-                      <span style={labelStyle}>Fecha</span>
-                      <span style={valueStyle}>{fmtDate(r.fecha)}</span>
-                      <span style={labelStyle}>Período</span>
-                      <span style={valueStyle}>{r.periodo || "-"}</span>
-                      <span style={labelStyle}>Importe</span>
-                      <span style={valueStyle}>{r.importe != null ? `$${fmtNum(r.importe)}` : "-"}</span>
-                    </Fragment>
-                  </div>
-                ))
-              )}
-            </div>
+          recibos.length === 0 ? (
+            <p style={{ color: "rgba(237,242,248,0.35)", fontSize: "0.82em" }}>Sin recibos registrados.</p>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <span style={{ ...sectionLabel, gridColumn: "unset", paddingTop: 0 }}>
-                Impuestos ({impuestos.length})
-              </span>
-              {impuestos.length === 0 ? (
-                <p style={{ color: "rgba(237,242,248,0.35)", fontSize: "0.82em" }}>Sin impuestos registrados.</p>
-              ) : (
-                impuestos.map((imp, i) => (
-                  <div key={i} style={cardStyle}>
-                    <Fragment>
-                      <span style={labelStyle}>Fecha</span>
-                      <span style={valueStyle}>{fmtDate(imp.fecha)}</span>
-                      {imp.expensasPeriodo && (
-                        <>
-                          <span style={labelStyle}>Exp. período</span>
-                          <span style={valueStyle}>{imp.expensasPeriodo}</span>
-                        </>
-                      )}
-                      {imp.aysaVto && (
-                        <>
-                          <span style={labelStyle}>AYSA vto.</span>
-                          <span style={valueStyle}>{imp.aysaVto}</span>
-                        </>
-                      )}
-                      {imp.metrogasVto && (
-                        <>
-                          <span style={labelStyle}>Metrogas vto.</span>
-                          <span style={valueStyle}>{imp.metrogasVto}</span>
-                        </>
-                      )}
-                      {imp.edesur && (
-                        <>
-                          <span style={labelStyle}>Edesur</span>
-                          <span style={valueStyle}>{imp.edesur}</span>
-                        </>
-                      )}
-                      {imp.inmobAblCuota && (
-                        <>
-                          <span style={labelStyle}>Inmob/ABL</span>
-                          <span style={valueStyle}>{imp.inmobAblCuota}</span>
-                        </>
-                      )}
-                      {imp.telefono && (
-                        <>
-                          <span style={labelStyle}>Teléfono</span>
-                          <span style={valueStyle}>{imp.telefono}</span>
-                        </>
-                      )}
-                      {imp.otros && (
-                        <>
-                          <span style={labelStyle}>Otros</span>
-                          <span style={valueStyle}>{imp.otros}</span>
-                        </>
-                      )}
-                    </Fragment>
-                  </div>
-                ))
-              )}
-            </div>
+            <ScrollTopTable vertical>
+              <table style={{ borderCollapse: "collapse", width: "100%" }}>
+                <thead>
+                  <tr>
+                    {["Fecha", "Período", "Importe"].map((h) => (
+                      <th key={h} style={thStyle}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {recibos.map((r, i) => (
+                    <tr
+                      key={i}
+                      style={trStyle}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(237,242,248,0.05)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                    >
+                      <td style={tdStyle}>{fmtDate(r.fecha)}</td>
+                      <td style={tdStyle}>{r.periodo || "-"}</td>
+                      <td style={tdStyle}>{r.importe != null ? `$${fmtNum(r.importe)}` : "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </ScrollTopTable>
           )
-        }
+        ) : (
+          impuestos.length === 0 ? (
+            <p style={{ color: "rgba(237,242,248,0.35)", fontSize: "0.82em" }}>Sin impuestos registrados.</p>
+          ) : (
+            <ScrollTopTable vertical>
+              <table style={{ borderCollapse: "collapse", width: "100%" }}>
+                <thead>
+                  <tr>
+                    {["Fecha", "Exp. Período", "AYSA Vto.", "Metrogas Vto.", "Edesur", "Inmob/ABL", "Teléfono", "Otros"].map((h) => (
+                      <th key={h} style={thStyle}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {impuestos.map((imp, i) => (
+                    <tr
+                      key={i}
+                      style={trStyle}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(237,242,248,0.05)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                    >
+                      <td style={tdStyle}>{fmtDate(imp.fecha)}</td>
+                      <td style={tdStyle}>{imp.expensasPeriodo || "-"}</td>
+                      <td style={tdStyle}>{imp.aysaVto || "-"}</td>
+                      <td style={tdStyle}>{imp.metrogasVto || "-"}</td>
+                      <td style={tdStyle}>{imp.edesur || "-"}</td>
+                      <td style={tdStyle}>{imp.inmobAblCuota || "-"}</td>
+                      <td style={tdStyle}>{imp.telefono || "-"}</td>
+                      <td style={tdStyle}>{imp.otros || "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </ScrollTopTable>
+          )
+        )}
       </div>
     </div>,
     document.body

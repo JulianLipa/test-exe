@@ -1,19 +1,24 @@
 import PrintHeader from "../../components/PrintHeader";
 
 const LABELS = {
-  aysaVto:         "AYSA VTO",
-  metrogasVto:     "METROGAS VTO",
-  inmobAblCuota:   "INMOB/ABL CUOTA",
-  edesur:          "EDESUR",
-  telefono:        "TELÉFONO",
+  aysaVto: "AYSA VTO",
+  metrogasVto: "METROGAS VTO",
+  inmobAblCuota: "INMOB/ABL CUOTA",
+  edesur: "EDESUR",
+  telefono: "TELÉFONO",
   expensasPeriodo: "EXPENSAS PERÍODO",
 };
 
-export default function ImpuestosImprimir({ form, alquiler, alquilerId, printId }) {
+export default function ImpuestosImprimir({
+  form,
+  alquiler,
+  alquilerId,
+  printId,
+}) {
   if (!alquilerId) return null;
 
   return (
-    <div className="recibo-print" data-recibo-id={printId || `imp-${alquilerId}`}>
+    <div>
       <Copia form={form} alquiler={alquiler} alquilerId={alquilerId} />
 
       <div className="recibo-print__separador" />
@@ -32,7 +37,9 @@ function Copia({ form, alquiler, alquilerId }) {
 
       <hr className="recibo-print__linea" />
 
-      <h2 className="recibo-print__titulo">Comprobante de Recepción de Impuestos</h2>
+      <h2 className="recibo-print__titulo">
+        Comprobante de Recepción de Impuestos
+      </h2>
 
       <hr className="recibo-print__linea" />
 
@@ -40,8 +47,11 @@ function Copia({ form, alquiler, alquilerId }) {
         <Row label="Contrato N°" value={alquilerId} />
         {alquiler && (
           <>
-            <Row label="Locatario" value={`${alquiler.locatario?.apellido || ""}, ${alquiler.locatario?.nombre || ""}`} />
-            <Row label="Inmueble"  value={alquiler.inmueble?.direccion} />
+            <Row
+              label="Locatario"
+              value={`${alquiler.locatario?.apellido || ""}, ${alquiler.locatario?.nombre || ""}`}
+            />
+            <Row label="Inmueble" value={alquiler.inmueble?.direccion} />
           </>
         )}
         <Row label="Fecha" value={fecha} />
@@ -51,7 +61,7 @@ function Copia({ form, alquiler, alquilerId }) {
 
       <div className="recibo-print__datos">
         {Object.entries(LABELS).map(([key, label]) =>
-          form[key] ? <Row key={key} label={label} value={form[key]} /> : null
+          form[key] ? <Row key={key} label={label} value={form[key]} /> : null,
         )}
       </div>
 

@@ -6,6 +6,7 @@ export const formConfig = [
       { name: "locador.nombre", label: "Nombre", required: true },
       { name: "locador.direccion", label: "Dirección", required: true },
       { name: "locador.telefono", label: "Teléfono", type: "number" },
+      { name: "locador.mail", label: "Mail", type: "email" },
     ],
   },
   {
@@ -19,6 +20,7 @@ export const formConfig = [
         required: true,
       },
       { name: "inmueble.telefono", label: "Teléfono inmueble", type: "number" },
+      { name: "locatario.mail", label: "Mail", type: "email" },
     ],
   },
   {

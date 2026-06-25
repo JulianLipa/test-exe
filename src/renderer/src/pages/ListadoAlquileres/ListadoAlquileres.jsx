@@ -1,21 +1,27 @@
 import { Fragment, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import ConfirmModal from "../../components/ConfirmModal";
 import { alquilerMatchesQuery } from "../../utils/search.js";
 import { fmtDate, fmtNum, calcTotalPeriodos } from "../../utils/formatters.js";
+import { useListadoPage } from "../../hooks/useListadoPage.js";
+import SearchBar from "../../components/SearchBar.jsx";
+import VolverModal from "../../components/VolverModal.jsx";
 
 const fmt = fmtNum;
 
 const fmtPrice = (v) => {
-  if (v === "" || v == null) return "";
+  if (!v) return "";
   const n = Number(String(v).replace(/\./g, "").replace(",", "."));
-  if (isNaN(n)) return String(v);
+  if (isNaN(n) || n === 0) return "";
   return n.toLocaleString("es-AR");
 };
 
-const parsePrice = (str) =>
-  Number(String(str ?? "").replace(/\./g, "").replace(",", ".")) || 0;
-
+const parsePrice = (str) => {
+  const n = Number(
+    String(str ?? "")
+      .replace(/\./g, "")
+      .replace(",", "."),
+  );
+  return n || null;
+};
 
 const inputStyle = {
   background: "rgba(237,242,248,0.08)",
@@ -58,27 +64,53 @@ const divider = {
   margin: "4px 0",
 };
 
-function AlquilerCard({ item, getMontoDisplay, handleMontoChange, handleMontoBlur, handleMontoSave, navRef }) {
-  const total    = calcTotalPeriodos(item.fecha_inicio, item.fecha_fin, item.actualizacion_meses);
-  const allNums  = total
+function AlquilerCard({
+  item,
+  getMontoDisplay,
+  handleMontoChange,
+  handleMontoBlur,
+  handleMontoSave,
+  navRef,
+}) {
+  const total = calcTotalPeriodos(
+    item.fecha_inicio,
+    item.fecha_fin,
+    item.actualizacion_meses,
+  );
+  const allNums = total
     ? Array.from({ length: total }, (_, i) => i + 1)
-    : (item.montos?.length ? item.montos.map((m) => m.numero) : null);
+    : item.montos?.length
+      ? item.montos.map((m) => m.numero)
+      : null;
 
-  const filledCount = allNums?.filter((num) => {
-    const m = item.montos?.find((x) => x.numero === num);
-    return m != null && m.monto != null;
-  }).length ?? 0;
+  const filledCount =
+    allNums?.filter((num) => {
+      const m = item.montos?.find((x) => x.numero === num);
+      return m != null && m.monto;
+    }).length ?? 0;
 
   const mainRows = [
-    { label: "Locador",    value: `${item.locador?.apellido ?? "-"}, ${item.locador?.nombre ?? "-"}` },
-    { label: "Locatario",  value: `${item.locatario?.apellido ?? "-"}, ${item.locatario?.nombre ?? "-"}` },
-    { label: "Inmueble",   value: item.inmueble?.direccion || "-" },
-    { label: "Inicio",     value: fmtDate(item.fecha_inicio) },
-    { label: "Fin",        value: fmtDate(item.fecha_fin) },
-    { label: "Actualiz.",  value: item.actualizacion_meses ? `${item.actualizacion_meses} meses` : "-" },
-    { label: "Índice",     value: item.indice || "-" },
-    { label: "Honorario",  value: item.honorario ? `${item.honorario}%` : "-" },
-    { label: "Depósito",   value: item.deposito_garantia ? `$${fmt(item.deposito_garantia)}` : "-" },
+    {
+      label: "Locador",
+      value: `${item.locador?.apellido ?? "-"}, ${item.locador?.nombre ?? "-"}`,
+    },
+    {
+      label: "Locatario",
+      value: `${item.locatario?.apellido ?? "-"}, ${item.locatario?.nombre ?? "-"}`,
+    },
+    { label: "Inmueble", value: item.inmueble?.direccion || "-" },
+    { label: "Inicio", value: fmtDate(item.fecha_inicio) },
+    { label: "Fin", value: fmtDate(item.fecha_fin) },
+    {
+      label: "Actualiz.",
+      value: item.actualizacion_meses ? `${item.actualizacion_meses} meses` : "-",
+    },
+    { label: "Índice", value: item.indice || "-" },
+    { label: "Honorario", value: item.honorario ? `${item.honorario}%` : "-" },
+    {
+      label: "Depósito",
+      value: item.deposito_garantia ? `$${fmt(item.deposito_garantia)}` : "-",
+    },
   ];
 
   const impRows = [
@@ -89,16 +121,18 @@ function AlquilerCard({ item, getMontoDisplay, handleMontoChange, handleMontoBlu
   ];
 
   return (
-    <div style={{
-      background: "rgba(237,242,248,0.04)",
-      border: "1px solid rgba(237,242,248,0.1)",
-      borderRadius: "0.7em",
-      padding: "18px 22px",
-      display: "flex",
-      flexDirection: "column",
-      gap: 0,
-    }}>
-      {/* Encabezado */}
+    <div
+      className="mb-5!"
+      style={{
+        background: "rgba(237,242,248,0.04)",
+        border: "1px solid rgba(237,242,248,0.1)",
+        borderRadius: "0.7em",
+        padding: "18px 22px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 0,
+      }}
+    >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
         <span style={{ fontWeight: 700, fontSize: "1.05em", color: "rgb(237,242,248)" }}>
           Contrato #{item.id}
@@ -111,10 +145,7 @@ function AlquilerCard({ item, getMontoDisplay, handleMontoChange, handleMontoBlu
         </button>
       </div>
 
-      {/* Grid de 2 columnas: label | valor */}
       <div style={{ display: "grid", gridTemplateColumns: "max-content 1fr", gap: "8px 24px" }}>
-
-        {/* Datos principales */}
         {mainRows.map(({ label, value }) => (
           <Fragment key={label}>
             <span style={labelCol}>{label}</span>
@@ -122,7 +153,6 @@ function AlquilerCard({ item, getMontoDisplay, handleMontoChange, handleMontoBlu
           </Fragment>
         ))}
 
-        {/* Separador impuestos */}
         <div style={divider} />
         <span style={sectionLabel}>Impuestos</span>
 
@@ -133,7 +163,6 @@ function AlquilerCard({ item, getMontoDisplay, handleMontoChange, handleMontoBlu
           </Fragment>
         ))}
 
-        {/* Separador montos */}
         {allNums && (
           <>
             <div style={divider} />
@@ -144,7 +173,6 @@ function AlquilerCard({ item, getMontoDisplay, handleMontoChange, handleMontoBlu
               )}
             </span>
 
-            {/* Montos: fuera del grid de 2 cols, en columna completa */}
             <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: 6, marginTop: 2 }}>
               {allNums.map((num) => (
                 <div key={num} style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -176,31 +204,25 @@ function AlquilerCard({ item, getMontoDisplay, handleMontoChange, handleMontoBlu
 }
 
 export default function ListadoAlquileres() {
-  const [allData, setAllData]             = useState([]);
-  const [results, setResults]             = useState([]);
-  const [loading, setLoading]             = useState(false);
-  const [showVolver, setShowVolver]       = useState(false);
-  const [montoEdits, setMontoEdits]       = useState({});
-  const [searchInput, setSearchInput]     = useState("");
-  const [searched, setSearched]           = useState(false);
-  const [showAll, setShowAll]             = useState(false);
-  const navigate  = useNavigate();
-  const navRef    = useRef(navigate);
+  const [allData, setAllData] = useState([]);
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [montoEdits, setMontoEdits] = useState({});
+  const [searchInput, setSearchInput] = useState("");
+  const [searched, setSearched] = useState(false);
+  const [showAll, setShowAll] = useState(false);
+  const { navRef, showVolver, setShowVolver, goBack } = useListadoPage();
   const firstInputRef = useRef(null);
-  useEffect(() => { navRef.current = navigate; });
-  useEffect(() => { firstInputRef.current?.focus(); }, []);
 
   useEffect(() => {
-    window.store.loadDB().then((db) => setAllData(Array.isArray(db) ? db : []));
+    firstInputRef.current?.focus();
   }, []);
 
   useEffect(() => {
-    const onKey = (e) => {
-      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
-      if (e.key === "-") setShowVolver(true);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.store.loadDB().then((db) => {
+      const arr = Array.isArray(db) ? db : [];
+      setAllData([...arr].sort((a, b) => new Date(b.fecha_inicio || 0) - new Date(a.fecha_inicio || 0)));
+    });
   }, []);
 
   const handleSearch = () => {
@@ -208,7 +230,11 @@ export default function ListadoAlquileres() {
     if (!query) return;
     setLoading(true);
     setShowAll(false);
-    setResults(allData.filter((a) => alquilerMatchesQuery(a, query)));
+    setResults(
+      allData
+        .filter((a) => alquilerMatchesQuery(a, query))
+        .sort((a, b) => new Date(b.fecha_inicio || 0) - new Date(a.fecha_inicio || 0))
+    );
     setSearched(true);
     setLoading(false);
   };
@@ -226,7 +252,7 @@ export default function ListadoAlquileres() {
     const key = `${item.id}_${numero}`;
     if (key in montoEdits) return montoEdits[key];
     const m = item.montos?.find((x) => x.numero === numero);
-    return m?.monto != null ? fmtPrice(m.monto) : "";
+    return m?.monto ? fmtPrice(m.monto) : "";
   };
 
   const handleMontoChange = (itemId, numero, val) => {
@@ -247,11 +273,16 @@ export default function ListadoAlquileres() {
 
   const handleMontoSave = async (item, numero) => {
     const display = getMontoDisplay(item, numero);
-    const value   = parsePrice(display);
+    const value = parsePrice(display);
     try {
       const res = await window.store.updateMonto(item.id, numero, value);
       if (!res?.ok) { alert("Error al guardar el monto"); return; }
-      setMontoEdits((prev) => ({ ...prev, [`${item.id}_${numero}`]: fmtPrice(value) }));
+      const key = `${item.id}_${numero}`;
+      setMontoEdits((prev) => {
+        const c = { ...prev };
+        if (value) { c[key] = fmtPrice(value); } else { delete c[key]; }
+        return c;
+      });
       setResults((prev) =>
         prev.map((i) => {
           if (i.id !== item.id) return i;
@@ -260,7 +291,7 @@ export default function ListadoAlquileres() {
             ? i.montos.map((m) => m.numero === numero ? { ...m, monto: value } : m)
             : [...(i.montos ?? []), { numero, monto: value }].sort((a, b) => a.numero - b.numero);
           return { ...i, montos: newMontos };
-        })
+        }),
       );
     } catch (err) {
       console.error(err);
@@ -277,30 +308,17 @@ export default function ListadoAlquileres() {
         <h2>Listado de alquileres</h2>
       </div>
 
-      <div className="flex items-center gap-2">
-        <label style={{ color: "rgba(237,242,248,0.6)", fontSize: "0.85em" }}>Buscar:</label>
-        <input
-          ref={firstInputRef}
-          type="text"
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-          placeholder="N° contrato exacto, o apellido / nombre"
-          style={{ width: 260 }}
-        />
-        <button type="button" onClick={handleSearch}>Buscar</button>
+      <SearchBar
+        ref={firstInputRef}
+        value={searchInput}
+        onChange={(e) => setSearchInput(e.target.value)}
+        onSearch={handleSearch}
+        placeholder="N° contrato exacto, o apellido / nombre"
+      >
         <button type="button" onClick={handleVerTodos}>Ver todos</button>
-      </div>
+      </SearchBar>
 
-      <ConfirmModal open={showVolver} onConfirm={() => navRef.current("/")} onCancel={() => setShowVolver(false)}>
-        <div className="p-4">
-          <p className="mb-4">¿Seguro que querés volver al menú?</p>
-          <div className="flex gap-2">
-            <button onClick={() => navRef.current("/")} className="buttonBlack">Sí</button>
-            <button onClick={() => setShowVolver(false)}>Cancelar</button>
-          </div>
-        </div>
-      </ConfirmModal>
+      <VolverModal open={showVolver} onConfirm={goBack} onCancel={() => setShowVolver(false)} />
 
       {showAll ? (
         <div style={{ overflowX: "auto" }}>
@@ -308,7 +326,21 @@ export default function ListadoAlquileres() {
             <thead>
               <tr style={{ borderBottom: "1px solid rgba(237,242,248,0.15)" }}>
                 {["N°", "Locador", "Locatario", "Inmueble", "Inicio", "Fin"].map((h) => (
-                  <th key={h} style={{ textAlign: "left", padding: "6px 12px", color: "rgba(237,242,248,0.45)", fontWeight: 600, textTransform: "uppercase", fontSize: "0.75em", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
+                  <th
+                    key={h}
+                    style={{
+                      textAlign: "left",
+                      padding: "6px 12px",
+                      color: "rgba(237,242,248,0.45)",
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      fontSize: "0.75em",
+                      letterSpacing: "0.05em",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {h}
+                  </th>
                 ))}
                 <th style={{ padding: "6px 12px" }} />
               </tr>
@@ -317,13 +349,29 @@ export default function ListadoAlquileres() {
               {allData.map((item) => (
                 <tr key={item.id} style={{ borderBottom: "1px solid rgba(237,242,248,0.06)" }}>
                   <td style={{ padding: "8px 12px", color: "rgb(237,242,248)", fontWeight: 600 }}>{item.id}</td>
-                  <td style={{ padding: "8px 12px", color: "rgb(237,242,248)" }}>{item.locador?.apellido || "-"}, {item.locador?.nombre || "-"}</td>
-                  <td style={{ padding: "8px 12px", color: "rgb(237,242,248)" }}>{item.locatario?.apellido || "-"}, {item.locatario?.nombre || "-"}</td>
-                  <td style={{ padding: "8px 12px", color: "rgba(237,242,248,0.65)" }}>{item.inmueble?.direccion || "-"}</td>
-                  <td style={{ padding: "8px 12px", color: "rgba(237,242,248,0.65)", whiteSpace: "nowrap" }}>{fmtDate(item.fecha_inicio)}</td>
-                  <td style={{ padding: "8px 12px", color: "rgba(237,242,248,0.65)", whiteSpace: "nowrap" }}>{fmtDate(item.fecha_fin)}</td>
+                  <td style={{ padding: "8px 12px", color: "rgb(237,242,248)" }}>
+                    {item.locador?.apellido || "-"}, {item.locador?.nombre || "-"}
+                  </td>
+                  <td style={{ padding: "8px 12px", color: "rgb(237,242,248)" }}>
+                    {item.locatario?.apellido || "-"}, {item.locatario?.nombre || "-"}
+                  </td>
+                  <td style={{ padding: "8px 12px", color: "rgba(237,242,248,0.65)" }}>
+                    {item.inmueble?.direccion || "-"}
+                  </td>
+                  <td style={{ padding: "8px 12px", color: "rgba(237,242,248,0.65)", whiteSpace: "nowrap" }}>
+                    {fmtDate(item.fecha_inicio)}
+                  </td>
+                  <td style={{ padding: "8px 12px", color: "rgba(237,242,248,0.65)", whiteSpace: "nowrap" }}>
+                    {fmtDate(item.fecha_fin)}
+                  </td>
                   <td style={{ padding: "8px 12px" }}>
-                    <button type="button" style={{ fontSize: "0.8em", padding: "2px 8px" }} onClick={() => navRef.current("/nuevoAlquiler", { state: { editId: item.id } })}>Editar</button>
+                    <button
+                      type="button"
+                      style={{ fontSize: "0.8em", padding: "2px 8px" }}
+                      onClick={() => navRef.current("/nuevoAlquiler", { state: { editId: item.id } })}
+                    >
+                      Editar
+                    </button>
                   </td>
                 </tr>
               ))}

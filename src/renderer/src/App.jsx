@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { HashRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home.jsx";
 import ReciboAlquiler from "./pages/ReciboAlquiler/index.jsx";
@@ -11,6 +12,19 @@ import ListadoPapelRosa from "./pages/ListadoPapelRosa/ListadoPapelRosa.jsx";
 import ListadoProximoMes from "./pages/ListadoProximoMes/ListadoProximoMes.jsx";
 
 function App() {
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === "Escape") {
+        const el = document.activeElement;
+        if (el && ["INPUT", "SELECT", "TEXTAREA"].includes(el.tagName)) {
+          el.blur();
+        }
+      }
+    };
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, []);
+
   return (
     <HashRouter>
       <Routes>

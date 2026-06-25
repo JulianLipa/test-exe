@@ -1,10 +1,9 @@
-import { createPortal } from "react-dom";
-
 import ReciboImprimir from "../../pages/ReciboAlquiler/components/ReciboImprimir";
 import ImpuestosImprimir from "../../pages/Impuestos/ImpuestosImprimir";
 import PapelRosaImprimir from "../../pages/PapelRosa/PapelRosaImprimir";
 import { formatCurrency as fmtCur } from "../../pages/ReciboAlquiler/components/form.utils";
 import PrinterIcon from "../PrinterIcon";
+import { usePrint } from "../../hooks/usePrint";
 
 import styles from "./CardDataHandler.module.css";
 
@@ -16,6 +15,8 @@ const CardDataHandler = ({ data }) => {
   const isImpuesto  = data.type === "impuesto";
   const isPapelRosa = data.type === "papelrosa";
 
+  const { triggerPrint, portal } = usePrint();
+
   const formatCurrency = (value) => Number(value || 0).toLocaleString("es-AR");
 
   const formatPeriodo = (periodo) => {
@@ -23,27 +24,6 @@ const CardDataHandler = ({ data }) => {
     if (typeof periodo === "string") return periodo;
     if (typeof periodo === "object") return `${periodo.month || ""} ${periodo.year || ""}`;
     return "-";
-  };
-
-  const impPrintId = `imp-${data.alquilerId}-${data.createdAt}`;
-
-  const handlePrintRecibo = () => {
-    document.querySelectorAll(".recibo-print").forEach((el) => el.classList.remove("recibo-print--active"));
-    document.querySelector(`.recibo-print[data-recibo-id="${data.alquilerId}"]`)?.classList.add("recibo-print--active");
-    window.print();
-  };
-
-  const handlePrintImpuesto = () => {
-    document.querySelectorAll(".recibo-print").forEach((el) => el.classList.remove("recibo-print--active"));
-    document.querySelector(`.recibo-print[data-recibo-id="${impPrintId}"]`)?.classList.add("recibo-print--active");
-    window.print();
-  };
-
-  const handlePrintPapelRosa = () => {
-    document.querySelectorAll(".papel-rosa-print").forEach((el) => el.classList.remove("papel-rosa-print--active"));
-    const wrapper = document.querySelector(`[data-papel-rosa-id="${data.createdAt}"]`);
-    wrapper?.querySelector(".papel-rosa-print")?.classList.add("papel-rosa-print--active");
-    window.print();
   };
 
   return (
@@ -74,7 +54,11 @@ const CardDataHandler = ({ data }) => {
             <p>Importe: ${formatCurrency(data?.importe)}</p>
             <p>{formatPeriodo(data?.periodo)}</p>
             <p>{data?.fecha}</p>
-            <button type="button" onClick={handlePrintRecibo} className={styles.printButton}>
+            <button
+              type="button"
+              onClick={() => triggerPrint(<ReciboImprimir form={data} alquiler={data.alquiler} />)}
+              className={styles.printButton}
+            >
               <PrinterIcon size={12} />
             </button>
           </div>
@@ -87,7 +71,11 @@ const CardDataHandler = ({ data }) => {
             <p>{data.apellidoDueno}</p>
             <p>{data.periodo}</p>
             <p>Total: {fmtCur(data.totalACobrar)}</p>
-            <button type="button" onClick={handlePrintPapelRosa} className={styles.printButton}>
+            <button
+              type="button"
+              onClick={() => triggerPrint(<PapelRosaImprimir data={data} />)}
+              className={styles.printButton}
+            >
               <PrinterIcon size={12} />
             </button>
           </div>
@@ -100,34 +88,24 @@ const CardDataHandler = ({ data }) => {
             <p>{data.locatario?.apellido}, {data.locatario?.nombre}</p>
             <p>{data.inmueble?.direccion}</p>
             <p>{data.fecha}</p>
-            <button type="button" onClick={handlePrintImpuesto} className={styles.printButton}>
+            <button
+              type="button"
+              onClick={() => triggerPrint(
+                <ImpuestosImprimir
+                  form={data}
+                  alquiler={data.alquiler}
+                  alquilerId={String(data.alquilerId)}
+                />
+              )}
+              className={styles.printButton}
+            >
               <PrinterIcon size={12} />
             </button>
           </div>
         )}
       </div>
 
-      {isRecibo && createPortal(
-        <ReciboImprimir form={data} alquiler={data.alquiler} />,
-        document.body
-      )}
-
-      {isImpuesto && createPortal(
-        <ImpuestosImprimir
-          form={data}
-          alquiler={data.alquiler}
-          alquilerId={String(data.alquilerId)}
-          printId={impPrintId}
-        />,
-        document.body
-      )}
-
-      {isPapelRosa && createPortal(
-        <div data-papel-rosa-id={data.createdAt}>
-          <PapelRosaImprimir data={data} />
-        </div>,
-        document.body
-      )}
+      {portal}
     </div>
   );
 };

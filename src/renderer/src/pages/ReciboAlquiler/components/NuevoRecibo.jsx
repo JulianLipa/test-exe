@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import ConfirmModal from "../../../components/ConfirmModal";
 import ReciboImprimir from "./ReciboImprimir";
 import PrinterIcon from "../../../components/PrinterIcon";
+import { usePrint } from "../../../hooks/usePrint";
 
 import { createInitialForm } from "./form.config";
 
@@ -17,6 +18,7 @@ import {
 
 export default function NuevoRecibo({ alquiler, alquilerId }) {
   const navigate = useNavigate();
+  const { triggerPrint, portal } = usePrint();
 
   const [form, setForm] = useState(createInitialForm());
   const [showConfirm, setShowConfirm] = useState(false);
@@ -98,13 +100,8 @@ export default function NuevoRecibo({ alquiler, alquilerId }) {
   // SUCCESS ACTIONS
   // =========================
   const handleImprimir = () => {
-    const el = document.querySelector(".recibo-print");
-    if (el) el.classList.add("recibo-print--active");
-    setTimeout(() => {
-      window.print();
-      if (el) el.classList.remove("recibo-print--active");
-      navigate("/");
-    }, 50);
+    triggerPrint(<ReciboImprimir form={form} alquiler={alquiler} />);
+    setTimeout(() => navigate("/"), 400);
   };
 
   const handleVolver = () => {
@@ -158,7 +155,7 @@ export default function NuevoRecibo({ alquiler, alquilerId }) {
         </div>
       </form>
 
-      <ReciboImprimir form={form} alquiler={alquiler} />
+      {portal}
 
       {/* MODAL: recibo guardado */}
       <ConfirmModal open={showSuccess} onConfirm={handleImprimir} onCancel={handleVolver}>
@@ -166,7 +163,7 @@ export default function NuevoRecibo({ alquiler, alquilerId }) {
           <p className="mb-4">Recibo guardado correctamente</p>
 
           <div className="flex gap-2">
-            <button onClick={handleImprimir} className="buttonBlack">
+            <button onClick={handleImprimir} className="flex items-center gap-2 buttonBlack">
               <PrinterIcon /> Imprimir recibo
             </button>
 

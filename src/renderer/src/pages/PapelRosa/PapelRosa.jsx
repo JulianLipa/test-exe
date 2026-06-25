@@ -8,6 +8,7 @@ import { alquilerMatchesQuery } from "../../utils/search.js";
 import { fmtDate } from "../../utils/formatters.js";
 import ContratoModal from "../../components/ContratoModal.jsx";
 import RecibosImpuestosModal from "../../components/RecibosImpuestosModal.jsx";
+import { usePrint } from "../../hooks/usePrint";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -80,6 +81,7 @@ export default function PapelRosa() {
   const [showConfirm, setShowConfirm]   = useState(false);
   const [showSuccess, setShowSuccess]   = useState(false);
   const [printTarget, setPrintTarget]   = useState(null);
+  const { triggerPrint, portal } = usePrint();
 
   useEffect(() => {
     const onKey = (e) => {
@@ -101,10 +103,10 @@ export default function PapelRosa() {
       const alqIdStr = String(alq.id);
       const impDe = impuestos
         .filter((i) => String(i.alquilerId) === alqIdStr)
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        .sort((a, b) => new Date(b.fecha || 0) - new Date(a.fecha || 0));
       const recDe = recibos
         .filter((r) => String(r.alquilerId ?? r.id) === alqIdStr)
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        .sort((a, b) => new Date(b.fecha || 0) - new Date(a.fecha || 0));
 
       setAlquiler(alq);
       setLastImpuesto(impDe[0] || null);
@@ -207,13 +209,8 @@ export default function PapelRosa() {
   };
 
   const handleImprimir = () => {
-    const el = document.querySelector(".papel-rosa-print");
-    if (el) el.classList.add("papel-rosa-print--active");
-    setTimeout(() => {
-      window.print();
-      if (el) el.classList.remove("papel-rosa-print--active");
-      navRef.current("/");
-    }, 50);
+    triggerPrint(<PapelRosaImprimir data={printTarget} />);
+    setTimeout(() => navRef.current("/"), 400);
   };
 
   const resetForm = () => {
@@ -490,8 +487,7 @@ export default function PapelRosa() {
         </>
       )}
 
-      {/* impresión */}
-      {printTarget && <PapelRosaImprimir data={printTarget} alquiler={alquiler} />}
+      {portal}
 
       {/* modales */}
       <ConfirmModal open={showVolver} onConfirm={() => navRef.current("/")} onCancel={() => setShowVolver(false)}>

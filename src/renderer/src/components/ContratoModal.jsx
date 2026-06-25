@@ -1,9 +1,16 @@
-import { Fragment } from "react";
+import { Fragment, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { fmtDate, fmtNum, calcTotalPeriodos } from "../utils/formatters.js";
 import { labelStyle, valueStyle, sectionLabel, divider } from "../utils/modalStyles.js";
+import ScrollTopTable from "./ScrollTopTable/ScrollTopTable.jsx";
 
 export default function ContratoModal({ alquiler, onClose }) {
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, [onClose]);
+
   if (!alquiler) return null;
 
   const mainRows = [
@@ -46,18 +53,19 @@ export default function ContratoModal({ alquiler, onClose }) {
         style={{
           width: "60svw",
           maxHeight: "85svh",
-          overflowY: "auto",
+          overflow: "hidden",
           background: "rgb(14,25,37)",
           border: "1px solid rgba(237,242,248,0.12)",
           borderRadius: "0.8em",
           padding: "24px 28px",
           display: "flex",
           flexDirection: "column",
-          gap: 0,
+          gap: 16,
+          boxSizing: "border-box",
         }}
       >
         {/* Encabezado */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
           <span style={{ fontWeight: 700, fontSize: "1.1em", color: "rgb(237,242,248)" }}>
             Contrato #{alquiler.id}
           </span>
@@ -79,6 +87,7 @@ export default function ContratoModal({ alquiler, onClose }) {
         </div>
 
         {/* Grid 2 columnas */}
+        <ScrollTopTable vertical>
         <div style={{ display: "grid", gridTemplateColumns: "max-content 1fr", gap: "9px 28px" }}>
 
           {mainRows.map(({ label, value }) => (
@@ -121,6 +130,7 @@ export default function ContratoModal({ alquiler, onClose }) {
             );
           })()}
         </div>
+        </ScrollTopTable>
       </div>
     </div>,
     document.body

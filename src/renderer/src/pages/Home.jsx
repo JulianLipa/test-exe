@@ -10,23 +10,23 @@ import {
 import styles from "../components/CardDataHandler/CardDataHandler.module.css";
 
 const ROUTES = {
-  "1": "/nuevoAlquiler",
-  "2": "/recibo",
-  "3": "/impuestos",
-  "4": "/papelRosa",
-  "5": "/listadoAlquiler",
-  "6": "/listadoRecibos",
-  "7": "/listadoImpuestos",
-  "8": "/listadoPapelRosa",
+  1: "/nuevoAlquiler",
+  2: "/recibo",
+  3: "/impuestos",
+  4: "/papelRosa",
+  5: "/listadoAlquiler",
+  6: "/listadoRecibos",
+  7: "/listadoImpuestos",
+  8: "/listadoPapelRosa",
 };
-
 
 const badgeStyle = (tipo) => ({
   fontSize: "0.72em",
   fontWeight: 700,
   padding: "2px 8px",
   borderRadius: "4px",
-  background: tipo === "vence" ? "rgba(248,113,113,0.18)" : "rgba(96,165,250,0.18)",
+  background:
+    tipo === "vence" ? "rgba(248,113,113,0.18)" : "rgba(96,165,250,0.18)",
   color: tipo === "vence" ? "#f87171" : "#60a5fa",
   whiteSpace: "nowrap",
   letterSpacing: "0.03em",
@@ -34,10 +34,10 @@ const badgeStyle = (tipo) => ({
 });
 
 function Home() {
-  const navigate  = useNavigate();
-  const navRef    = useRef(navigate);
-  const scrollRef  = useRef(null);
-  const [alquileres, setAlquileres]   = useState([]);
+  const navigate = useNavigate();
+  const navRef = useRef(navigate);
+  const scrollRef = useRef(null);
+  const [alquileres, setAlquileres] = useState([]);
   const [monthOffset, setMonthOffset] = useState(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
 
@@ -45,11 +45,18 @@ function Home() {
     if (scrollRef.current) setCanScrollLeft(scrollRef.current.scrollLeft > 0);
   };
 
-  useEffect(() => { navRef.current = navigate; });
+  useEffect(() => {
+    navRef.current = navigate;
+  });
 
   useEffect(() => {
     const onKey = (e) => {
-      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
+      if (
+        e.target.tagName === "INPUT" ||
+        e.target.tagName === "TEXTAREA" ||
+        e.target.tagName === "SELECT"
+      )
+        return;
       const route = ROUTES[e.key];
       if (route) navRef.current(route);
     };
@@ -58,7 +65,8 @@ function Home() {
   }, []);
 
   useEffect(() => {
-    window.store.loadDB()
+    window.store
+      .loadDB()
       .then((db) => setAlquileres(Array.isArray(db) ? db : []))
       .catch(() => {});
   }, []);
@@ -68,8 +76,8 @@ function Home() {
   const label = monthName(year, month);
 
   const actualizan = getAlquileresQueActualizan(alquileres, year, month);
-  const vencen     = getAlquileresQueVencen(alquileres, year, month);
-  const total      = actualizan.length + vencen.length;
+  const vencen = getAlquileresQueVencen(alquileres, year, month);
+  const total = actualizan.length + vencen.length;
 
   const preview = [
     ...vencen.map((a) => ({ ...a, _tipo: "vence" })),
@@ -77,23 +85,41 @@ function Home() {
   ];
 
   const scroll = (dir) => {
-    if (scrollRef.current) scrollRef.current.scrollBy({ left: dir * 220, behavior: "smooth" });
+    if (scrollRef.current)
+      scrollRef.current.scrollBy({ left: dir * 220, behavior: "smooth" });
   };
 
   return (
-    <div className="montserrat flex flex-col">
+    <div className="montserrat flex flex-col items-center justify-center h-auto">
       <div className="flex items-center gap-3 mb-3">
         <h2>Actualizan/Vencen</h2>
-        <button onClick={() => setMonthOffset((o) => o - 1)} style={{ fontSize: "1.1em", padding: "0 6px" }}>‹</button>
+        <button
+          onClick={() => setMonthOffset((o) => o - 1)}
+          style={{ fontSize: "1.1em", padding: "0 6px" }}
+        >
+          ‹
+        </button>
         <span style={{ minWidth: 110, textAlign: "center" }}>{label}</span>
-        <button onClick={() => setMonthOffset((o) => o + 1)} style={{ fontSize: "1.1em", padding: "0 6px" }}>›</button>
+        <button
+          onClick={() => setMonthOffset((o) => o + 1)}
+          style={{ fontSize: "1.1em", padding: "0 6px" }}
+        >
+          ›
+        </button>
         {monthOffset !== 0 && (
-          <button onClick={() => setMonthOffset(0)} style={{ fontSize: "0.75em", opacity: 0.65 }}>hoy</button>
+          <button
+            onClick={() => setMonthOffset(0)}
+            style={{ fontSize: "0.75em", opacity: 0.65 }}
+          >
+            hoy
+          </button>
         )}
       </div>
 
       {total === 0 ? (
-        <p className="thin">No hay alquileres que actualicen o venzan en {label}.</p>
+        <p className="thin">
+          No hay alquileres que actualicen o venzan en {label}.
+        </p>
       ) : (
         <>
           <div className={styles.wrapper}>
@@ -102,7 +128,12 @@ function Home() {
                 <button onClick={() => scroll(-1)}>‹</button>
               </div>
             )}
-            <div ref={scrollRef} className={styles.container} onScroll={handleScroll} style={{ gap: "12px", padding: "4px 40px 4px 0" }}>
+            <div
+              ref={scrollRef}
+              className={styles.container}
+              onScroll={handleScroll}
+              style={{ gap: "12px", padding: "4px 40px 4px 0" }}
+            >
               {preview.map((item) => (
                 <div
                   key={`${item._tipo}-${item.id}`}
@@ -116,16 +147,38 @@ function Home() {
                   }}
                 >
                   <div style={{ padding: "0.55em 1em", background: "white" }}>
-                    <p className="thin" style={{ color: "rgb(var(--azul-900))", fontSize: "0.78em", margin: 0 }}>
+                    <p
+                      className="thin"
+                      style={{
+                        color: "rgb(var(--azul-900))",
+                        fontSize: "0.78em",
+                        margin: 0,
+                      }}
+                    >
                       ALQUILER N°{item.id}
                     </p>
                   </div>
-                  <div style={{ padding: "0.7em 1em", display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <div
+                    style={{
+                      padding: "0.7em 1em",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "6px",
+                    }}
+                  >
                     <span style={badgeStyle(item._tipo)}>
                       {item._tipo === "actualiza" ? "Actualiza" : "Vence"}
                     </span>
-                    <p style={{ color: "rgb(237,242,248)", fontWeight: 400, fontSize: "0.85em", margin: 0 }}>
-                      {item.locatario?.apellido || "-"}, {item.locatario?.nombre || "-"}
+                    <p
+                      style={{
+                        color: "rgb(237,242,248)",
+                        fontWeight: 400,
+                        fontSize: "0.85em",
+                        margin: 0,
+                      }}
+                    >
+                      {item.locatario?.apellido || "-"},{" "}
+                      {item.locatario?.nombre || "-"}
                     </p>
                   </div>
                 </div>
@@ -137,7 +190,7 @@ function Home() {
           </div>
           <button
             onClick={() => navigate("/listadoProximoMes")}
-            style={{ marginTop: 10, alignSelf: "flex-start" }}
+            style={{ marginTop: 10 }}
           >
             Ver todos ({total})
           </button>

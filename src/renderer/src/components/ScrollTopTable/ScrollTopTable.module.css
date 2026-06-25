@@ -1,9 +1,12 @@
 .wrapper {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .topScroll {
+  flex-shrink: 0;
   overflow-x: scroll;
   overflow-y: hidden;
   height: 12px;
@@ -32,10 +35,49 @@
   background-clip: content-box;
 }
 
+.body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
 .content {
   overflow-x: auto;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .content::-webkit-scrollbar {
   display: none;
+}
+
+.rightScroll {
+  flex-shrink: 0;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  width: 12px;
+  margin-left: 10px;
+  border-radius: 6px;
+}
+
+.rightScroll::-webkit-scrollbar {
+  width: 12px;
+}
+
+.rightScroll::-webkit-scrollbar-track {
+  background: rgba(237, 242, 248, 0.06);
+  border-radius: 6px;
+}
+
+.rightScroll::-webkit-scrollbar-thumb {
+  background: rgba(237, 242, 248, 0.22);
+  border-radius: 6px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+.rightScroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(237, 242, 248, 0.42);
+  background-clip: content-box;
 }

@@ -13,7 +13,7 @@ export default function PapelRosaImprimir({ data }) {
   ];
 
   return (
-    <div className="papel-rosa-print">
+    <div>
       <PrintHeader />
       <hr className="recibo-print__linea" />
 

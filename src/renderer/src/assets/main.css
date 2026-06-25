@@ -15,26 +15,30 @@
 :root {
   --blanco-50: 237, 242, 248;
   --azul-900: 14, 25, 37;
+  --verde-600: 22, 163, 74;
+  --rojo-600: 220, 38, 38;
 }
 
-.blue{
+.blue {
   color: rgb(var(--azul-900));
 }
 
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
   outline: none;
 }
 
 input,
-select {
+select,
+textarea {
   border: 1px solid white;
   padding: 0.6em;
   border-radius: 0.5em;
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-select option{
+select option {
   color: rgb(var(--azul-900));
 }
 
@@ -56,6 +60,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 body {
   background-color: rgb(var(--azul-900));
   color: rgb(var(--blanco-50));
+
+  display: flex;
+  flex-direction: column;
+
   height: 100svh;
   width: 100%;
 
@@ -87,11 +95,133 @@ button:hover {
   background-color: rgba(255, 255, 255, 0.5);
 }
 
+/* ========================= CONTRACT CARDS ========================= */
+
+button.card-contrato {
+  background: rgba(var(--blanco-50), 0.05);
+  border: 1px solid rgba(var(--blanco-50), 0.15);
+  border-radius: 0.5em;
+  padding: 10px 14px;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 180px;
+  width: fit-content;
+  transition: background 0.15s, border-color 0.15s;
+  color: inherit;
+}
+
+button.card-contrato--selected {
+  background: rgba(var(--blanco-50), 0.12);
+  border-color: rgba(var(--blanco-50), 0.4);
+}
+
+button.card-contrato:hover {
+  background: white;
+  border-color: white;
+}
+
+.card-contrato__num {
+  font-weight: 700;
+  font-size: 0.9em;
+  color: rgb(var(--blanco-50));
+  transition: color 0.15s;
+}
+
+.card-contrato__info {
+  font-size: 0.8em;
+  color: rgba(var(--blanco-50), 0.75);
+  transition: color 0.15s;
+}
+
+.card-contrato__label {
+  opacity: 0.55;
+}
+
+.card-contrato__addr {
+  font-size: 0.75em;
+  color: rgba(var(--blanco-50), 0.4);
+  transition: color 0.15s;
+}
+
+button.card-contrato:hover .card-contrato__num,
+button.card-contrato:hover .card-contrato__info,
+button.card-contrato:hover .card-contrato__addr {
+  color: rgb(var(--azul-900));
+}
+
+button.card-contrato:hover .badge-vigente {
+  color: rgb(var(--verde-600));
+}
+
+button.card-contrato:hover .badge-vencido {
+  color: rgb(var(--rojo-600));
+}
+
+/* ========================= RESULT TABLES ========================= */
+
+.tr-result {
+  border-bottom: 1px solid rgba(237, 242, 248, 0.08);
+  transition: background 0.15s;
+}
+
+.td-result {
+  padding: 10px 14px;
+  color: rgb(var(--blanco-50));
+  font-weight: 500;
+  font-size: 0.9em;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+
+.tr-result:hover {
+  background: white;
+}
+
+.tr-result:hover .td-result {
+  color: rgb(var(--azul-900));
+}
+
+/* ========================= BADGES ========================= */
+
+.badge-vigente,
+.badge-vencido {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 0.72em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.badge-vigente {
+  color: rgb(var(--verde-600));
+  border-color: rgb(var(--verde-600));
+  background: rgba(var(--verde-600), 0.12);
+}
+
+.badge-vencido {
+  color: rgb(var(--rojo-600));
+  border-color: rgb(var(--rojo-600));
+  background: rgba(var(--rojo-600), 0.12);
+}
+
 /* ========================= PRINT ========================= */
 
-.recibo-print,
-.papel-rosa-print {
-  display: none;
+/* Renderizado pero invisible en pantalla (garantiza que el SVG del logo se carga antes de imprimir) */
+.print-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: -9999;
 }
 
 @media print {
@@ -103,25 +233,23 @@ button:hover {
   body {
     background-color: white !important;
     padding: 0 !important;
+    height: auto !important;
   }
 
-  body * {
-    visibility: hidden;
+  body>*:not(.print-wrapper--active) {
+    display: none !important;
   }
 
-  .recibo-print--active,
-  .recibo-print--active * {
-    visibility: visible;
-  }
-
-  .recibo-print--active {
+  .print-wrapper--active {
     display: block !important;
-    position: fixed;
-    top: 0;
-    left: 0;
+    position: static !important;
     width: 100%;
     color: black;
     font-family: "Montserrat", sans-serif;
+  }
+
+  .print-wrapper--active * {
+    visibility: visible;
   }
 
   .recibo-print__header {
@@ -163,8 +291,8 @@ button:hover {
   .recibo-print__datos {
     display: flex;
     flex-direction: column;
-    gap: 1px;
-    margin: 1px 0;
+    gap: 5px;
+    margin: 5px 0;
   }
 
   .recibo-print__row {
@@ -202,21 +330,5 @@ button:hover {
     flex-direction: column;
     gap: 1px;
     margin: 2px 0;
-  }
-
-  /* ── Papel Rosa ── */
-  .papel-rosa-print--active,
-  .papel-rosa-print--active * {
-    visibility: visible;
-  }
-
-  .papel-rosa-print--active {
-    display: block !important;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    color: black;
-    font-family: "Montserrat", sans-serif;
   }
 }

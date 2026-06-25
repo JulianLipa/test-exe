@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { alquilerMatchesQuery } from "../utils/search.js";
+import ContratoCards from "./ContratoCards.jsx";
 import ContratoModal from "./ContratoModal.jsx";
 import RecibosImpuestosModal from "./RecibosImpuestosModal.jsx";
 
@@ -34,7 +35,6 @@ export default function AlquilerSelector({ onChange }) {
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Búsqueda */}
       <div className="flex gap-3">
         <input
           type="text"
@@ -48,42 +48,10 @@ export default function AlquilerSelector({ onChange }) {
         <button type="button" onClick={handleSearch}>Buscar</button>
       </div>
 
-      {/* Resultados */}
       {resultados.length > 0 && (
-        <div className="flex gap-3 flex-wrap">
-          {resultados.map((a) => (
-            <button
-              type="button"
-              key={a.id}
-              onClick={() => handleSelect(a)}
-              style={{
-                background: alquiler?.id === a.id ? "rgba(237,242,248,0.12)" : "rgba(237,242,248,0.05)",
-                border: `1px solid ${alquiler?.id === a.id ? "rgba(237,242,248,0.4)" : "rgba(237,242,248,0.15)"}`,
-                borderRadius: "0.5em",
-                padding: "10px 14px",
-                textAlign: "left",
-                cursor: "pointer",
-                display: "flex",
-                flexDirection: "column",
-                gap: 3,
-              }}
-            >
-              <span style={{ fontWeight: 700, fontSize: "0.9em", color: "rgb(237,242,248)" }}>N° {a.id}</span>
-              <span style={{ fontSize: "0.8em", color: "rgba(237,242,248,0.75)" }}>
-                <span style={{ opacity: 0.55 }}>Locador: </span>{a.locador?.apellido || "-"}, {a.locador?.nombre || "-"}
-              </span>
-              <span style={{ fontSize: "0.8em", color: "rgba(237,242,248,0.75)" }}>
-                <span style={{ opacity: 0.55 }}>Locatario: </span>{a.locatario?.apellido || "-"}, {a.locatario?.nombre || "-"}
-              </span>
-              {a.inmueble?.direccion && (
-                <span style={{ fontSize: "0.75em", color: "rgba(237,242,248,0.4)" }}>{a.inmueble.direccion}</span>
-              )}
-            </button>
-          ))}
-        </div>
+        <ContratoCards alquileres={resultados} selectedId={alquiler?.id} onSelect={handleSelect} />
       )}
 
-      {/* N° de contrato editable */}
       <input
         type="number"
         placeholder="N° de contrato"
@@ -92,7 +60,6 @@ export default function AlquilerSelector({ onChange }) {
         className="border p-2 rounded"
       />
 
-      {/* Info del seleccionado */}
       {alquiler && (
         <div className="flex flex-col gap-2" style={{ fontSize: "0.88em" }}>
           <div className="flex flex-col gap-1 thin">
