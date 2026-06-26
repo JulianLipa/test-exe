@@ -70,7 +70,7 @@ export default function ListadoPapelRosa() {
             <p className="thin">No hay papeles rosa para el contrato N° {selected.id}.</p>
           ) : (
             <ScrollTopTable>
-              <table style={{ borderCollapse: "collapse", width: "100%" }}>
+              <table style={{ borderCollapse: "collapse", width: "auto" }}>
                 <thead>
                   <tr>
                     <th style={thStyle}><PrinterIcon /></th>

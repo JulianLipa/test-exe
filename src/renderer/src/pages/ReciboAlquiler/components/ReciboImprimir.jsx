@@ -1,5 +1,6 @@
 import { formatCurrency } from "./form.utils";
 import PrintHeader from "../../../components/PrintHeader";
+import PrintPage from "../../../components/PrintPage";
 
 export default function ReciboImprimir({ form, alquiler }) {
   if (!alquiler) return null;
@@ -13,72 +14,136 @@ export default function ReciboImprimir({ form, alquiler }) {
   const honorarios = importe * (honorarioPct / 100);
   const neto = importe - honorarios;
 
-  return (
-    <div>
+  const locatarioNombre = [alquiler.locatario?.apellido, alquiler.locatario?.nombre]
+    .filter(Boolean).join(", ");
+  const locadorNombre = [alquiler.locador?.apellido, alquiler.locador?.nombre]
+    .filter(Boolean).join(", ");
 
-      {/* ── RECIBO ── */}
+  return (
+    <PrintPage>
+
+      {/* ── RECIBO (1ra copia) ── */}
+      <ReciboSection
+        fecha={fecha}
+        alquiler={alquiler}
+        locatarioNombre={locatarioNombre}
+        locadorNombre={locadorNombre}
+        periodo={form.periodo}
+        importe={importe}
+      />
+
+      {/* separador: solo línea, sin altura */}
+      <div style={{ borderBottom: "1px dashed #aaa" }} />
+
+      {/* ── RECIBO (2da copia) ── */}
+      <ReciboSection
+        fecha={fecha}
+        alquiler={alquiler}
+        locatarioNombre={locatarioNombre}
+        locadorNombre={locadorNombre}
+        periodo={form.periodo}
+        importe={importe}
+      />
+
+      {/* ── LIQUIDACION (página nueva, 2 copias) ── */}
+      <div className="break-before-page">
+        <LiquidacionSection
+          fecha={fecha}
+          alquiler={alquiler}
+          locadorNombre={locadorNombre}
+          periodo={form.periodo}
+          neto={neto}
+        />
+
+        {/* separador: solo línea, sin altura */}
+        <div style={{ borderBottom: "1px dashed #aaa" }} />
+
+        <LiquidacionSection
+          fecha={fecha}
+          alquiler={alquiler}
+          locadorNombre={locadorNombre}
+          periodo={form.periodo}
+          neto={neto}
+        />
+      </div>
+
+    </PrintPage>
+  );
+}
+
+function ReciboSection({ fecha, alquiler, locatarioNombre, locadorNombre, periodo, importe }) {
+  return (
+    <div style={{ height: "136.5mm", boxSizing: "border-box" }}>
       <PrintHeader />
 
-      <hr className="recibo-print__linea" />
-
-      <h2 className="recibo-print__titulo">
+      <hr className="border-0 border-t border-[#333] my-[5px]" />
+      <h2 className="text-[1.15em] font-bold mb-[4px] uppercase tracking-[1px]">
         Recibo de Alquiler por Cuenta de Tercero
       </h2>
+      <hr className="border-0 border-t border-[#333] my-[5px]" />
 
-      <hr className="recibo-print__linea" />
-
-      <div className="recibo-print__datos">
-        <Row label="Contrato N°" value={alquiler.id} />
-        <Row label="Locatario" value={alquiler.locatario?.apellido} />
-        <Row label="Locador" value={alquiler.locador?.apellido} />
-        <Row label="Inmueble" value={alquiler.inmueble?.direccion} />
-        <Row label="Período" value={form.periodo} />
+      <div className="flex flex-col gap-[5px] my-[5px]">
         <Row label="Fecha" value={fecha} />
+        <div className="h-[8px]" />
+        <Row label="Contrato N°" value={alquiler.id} />
+        <Row label="Recibí de" value={locatarioNombre} />
+        <Row label="Locador" value={locadorNombre} />
+        <Row label="Inmueble" value={alquiler.inmueble?.direccion} />
+        <Row label="Período" value={periodo} />
       </div>
 
-      <hr className="recibo-print__linea" />
+      <hr className="border-0 border-t border-[#333] mt-[5px]" />
 
-      <div className="recibo-print__importe">
-        <span>Importe total</span>
-        <span>{formatCurrency(importe)}</span>
-      </div>
+      <Footer total={formatCurrency(importe)} firmaLabel="Firma" />
+    </div>
+  );
+}
 
-      {/* ── LIQUIDACION ── */}
-      <div className="recibo-print__separador" />
-
+function LiquidacionSection({ fecha, alquiler, locadorNombre, periodo, neto }) {
+  return (
+    <div style={{ height: "136.5mm", boxSizing: "border-box" }}>
       <PrintHeader />
 
-      <hr className="recibo-print__linea" />
+      <hr className="border-0 border-t border-[#333] my-[5px]" />
+      <h2 className="text-[1.15em] font-bold mb-[4px] uppercase tracking-[1px]">
+        Liquidación de Alquiler
+      </h2>
+      <hr className="border-0 border-t border-[#333] my-[5px]" />
 
-      <h2 className="recibo-print__titulo">Liquidación de Alquiler</h2>
-
-      <hr className="recibo-print__linea" />
-
-      <div className="recibo-print__datos">
-        <Row label="Señor/a" value={alquiler.locador?.nombre} />
-        <Row label="Dirección" value={alquiler.locador?.direccion} />
-        <Row label="Contrato N°" value={alquiler.id} />
-        <Row label="Inmueble" value={alquiler.inmueble?.direccion} />
-        <Row label="Período" value={form.periodo} />
+      <div className="flex flex-col gap-[5px] my-[5px]">
         <Row label="Fecha" value={fecha} />
+        <div className="h-[8px]" />
+        <Row label="Contrato N°" value={alquiler.id} />
+        <Row label="Señor/a" value={locadorNombre} />
+        <Row label="Dirección" value={alquiler.locador?.direccion} />
+        <Row label="Inmueble" value={alquiler.inmueble?.direccion} />
+        <Row label="Período" value={periodo} />
       </div>
 
-      <hr className="recibo-print__linea" />
+      <hr className="border-0 border-t border-[#333] mt-[5px]" />
 
-      <div className="recibo-print__importe">
-        <span>Total</span>
-        <span>{formatCurrency(neto)}</span>
+      <Footer total={formatCurrency(neto)} firmaLabel="Firma del propietario" />
+    </div>
+  );
+}
+
+function Footer({ total, firmaLabel }) {
+  return (
+    <div className="flex justify-between items-start">
+      <span className="mt-2 text-[1.08em] font-bold">Total {total}</span>
+      <div className="flex flex-col items-center text-[0.92em] font-semibold min-w-[180px]">
+        <div className="w-full h-[52px] border-x border-b border-[#333]" />
+        <span>{firmaLabel}</span>
       </div>
-
     </div>
   );
 }
 
 function Row({ label, value }) {
   return (
-    <div className="recibo-print__row">
-      <span className="recibo-print__label">{label}</span>
-      <span className="recibo-print__value">{value}</span>
+    <div className="flex gap-[8px]">
+      <span className="font-bold min-w-[110px] text-[1em]">{label}</span>
+      <span className="font-medium text-[1em]">{value}</span>
     </div>
   );
 }

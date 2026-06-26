@@ -1,4 +1,5 @@
 import PrintHeader from "../../components/PrintHeader";
+import PrintPage from "../../components/PrintPage";
 
 const LABELS = {
   aysaVto: "AYSA VTO",
@@ -9,22 +10,15 @@ const LABELS = {
   expensasPeriodo: "EXPENSAS PERÍODO",
 };
 
-export default function ImpuestosImprimir({
-  form,
-  alquiler,
-  alquilerId,
-  printId,
-}) {
+export default function ImpuestosImprimir({ form, alquiler, alquilerId }) {
   if (!alquilerId) return null;
 
   return (
-    <div>
+    <PrintPage>
       <Copia form={form} alquiler={alquiler} alquilerId={alquilerId} />
-
-      <div className="recibo-print__separador" />
-
+      <div className="h-[12px] border-b border-dashed border-[#aaa] mb-[12px]" />
       <Copia form={form} alquiler={alquiler} alquilerId={alquilerId} />
-    </div>
+    </PrintPage>
   );
 }
 
@@ -35,15 +29,15 @@ function Copia({ form, alquiler, alquilerId }) {
     <>
       <PrintHeader />
 
-      <hr className="recibo-print__linea" />
-
-      <h2 className="recibo-print__titulo">
+      <hr className="border-0 border-t border-[#333] my-[5px]" />
+      <h2 className="text-[1.15em] font-bold mb-[4px] uppercase tracking-[1px]">
         Comprobante de Recepción de Impuestos
       </h2>
+      <hr className="border-0 border-t border-[#333] my-[5px]" />
 
-      <hr className="recibo-print__linea" />
-
-      <div className="recibo-print__datos">
+      <div className="flex flex-col gap-[5px] my-[5px]">
+        <Row label="Fecha" value={fecha} />
+        <div className="h-[8px]" />
         <Row label="Contrato N°" value={alquilerId} />
         {alquiler && (
           <>
@@ -54,12 +48,11 @@ function Copia({ form, alquiler, alquilerId }) {
             <Row label="Inmueble" value={alquiler.inmueble?.direccion} />
           </>
         )}
-        <Row label="Fecha" value={fecha} />
       </div>
 
-      <hr className="recibo-print__linea" />
+      <hr className="border-0 border-t border-[#333] my-[5px]" />
 
-      <div className="recibo-print__datos">
+      <div className="flex flex-col gap-[5px] my-[5px]">
         {Object.entries(LABELS).map(([key, label]) =>
           form[key] ? <Row key={key} label={label} value={form[key]} /> : null,
         )}
@@ -67,8 +60,8 @@ function Copia({ form, alquiler, alquilerId }) {
 
       {form.otros && (
         <>
-          <hr className="recibo-print__linea" />
-          <div className="recibo-print__datos">
+          <hr className="border-0 border-t border-[#333] my-[5px]" />
+          <div className="flex flex-col gap-[5px] my-[5px]">
             <Row label="OTROS" value={form.otros} />
           </div>
         </>
@@ -79,9 +72,9 @@ function Copia({ form, alquiler, alquilerId }) {
 
 function Row({ label, value }) {
   return (
-    <div className="recibo-print__row">
-      <span className="recibo-print__label">{label}</span>
-      <span className="recibo-print__value">{value}</span>
+    <div className="flex gap-[8px]">
+      <span className="font-bold min-w-[110px] text-[1em]">{label}</span>
+      <span className="font-medium text-[1em]">{value}</span>
     </div>
   );
 }

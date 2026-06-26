@@ -88,7 +88,7 @@ export default function RecibosImpuestosModal({ alquiler, mode, onClose }) {
             <p style={{ color: "rgba(237,242,248,0.35)", fontSize: "0.82em" }}>Sin recibos registrados.</p>
           ) : (
             <ScrollTopTable vertical>
-              <table style={{ borderCollapse: "collapse", width: "100%" }}>
+              <table style={{ borderCollapse: "collapse", width: "auto" }}>
                 <thead>
                   <tr>
                     {["Fecha", "Período", "Importe"].map((h) => (
@@ -118,7 +118,7 @@ export default function RecibosImpuestosModal({ alquiler, mode, onClose }) {
             <p style={{ color: "rgba(237,242,248,0.35)", fontSize: "0.82em" }}>Sin impuestos registrados.</p>
           ) : (
             <ScrollTopTable vertical>
-              <table style={{ borderCollapse: "collapse", width: "100%" }}>
+              <table style={{ borderCollapse: "collapse", width: "auto" }}>
                 <thead>
                   <tr>
                     {["Fecha", "Exp. Período", "AYSA Vto.", "Metrogas Vto.", "Edesur", "Inmob/ABL", "Teléfono", "Otros"].map((h) => (

@@ -322,7 +322,7 @@ export default function ListadoAlquileres() {
 
       {showAll ? (
         <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85em" }}>
+          <table style={{ width: "auto", borderCollapse: "collapse", fontSize: "0.85em" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid rgba(237,242,248,0.15)" }}>
                 {["N°", "Locador", "Locatario", "Inmueble", "Inicio", "Fin"].map((h) => (
@@ -348,14 +348,14 @@ export default function ListadoAlquileres() {
             <tbody>
               {allData.map((item) => (
                 <tr key={item.id} style={{ borderBottom: "1px solid rgba(237,242,248,0.06)" }}>
-                  <td style={{ padding: "8px 12px", color: "rgb(237,242,248)", fontWeight: 600 }}>{item.id}</td>
-                  <td style={{ padding: "8px 12px", color: "rgb(237,242,248)" }}>
+                  <td style={{ padding: "8px 12px", color: "rgb(237,242,248)", fontWeight: 600, whiteSpace: "nowrap" }}>{item.id}</td>
+                  <td style={{ padding: "8px 12px", color: "rgb(237,242,248)", whiteSpace: "nowrap" }}>
                     {item.locador?.apellido || "-"}, {item.locador?.nombre || "-"}
                   </td>
-                  <td style={{ padding: "8px 12px", color: "rgb(237,242,248)" }}>
+                  <td style={{ padding: "8px 12px", color: "rgb(237,242,248)", whiteSpace: "nowrap" }}>
                     {item.locatario?.apellido || "-"}, {item.locatario?.nombre || "-"}
                   </td>
-                  <td style={{ padding: "8px 12px", color: "rgba(237,242,248,0.65)" }}>
+                  <td style={{ padding: "8px 12px", color: "rgba(237,242,248,0.65)", whiteSpace: "nowrap" }}>
                     {item.inmueble?.direccion || "-"}
                   </td>
                   <td style={{ padding: "8px 12px", color: "rgba(237,242,248,0.65)", whiteSpace: "nowrap" }}>

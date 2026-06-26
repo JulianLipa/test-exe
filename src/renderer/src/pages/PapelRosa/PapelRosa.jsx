@@ -14,6 +14,15 @@ import { usePrint } from "../../hooks/usePrint";
 
 const num = (v) => Number(String(v).replace(/[^\d]/g, "")) || 0;
 
+// Convierte serial de Excel (ej: "46061") a texto legible, si corresponde
+const fmtImpuestoVal = (val) => {
+  if (val && /^\d{5}$/.test(String(val).trim())) {
+    const d = new Date((Number(val) - 25569) * 86400 * 1000);
+    if (!isNaN(d)) return d.toLocaleDateString("es-AR", { month: "long", year: "numeric" });
+  }
+  return val;
+};
+
 const IMPUESTO_LABELS = {
   aysaVto:         "AYSA VTO",
   metrogasVto:     "METROGAS VTO",
@@ -339,7 +348,7 @@ export default function PapelRosa() {
                 <div className="flex flex-col gap-1">
                   <InfoRow label="Fecha" value={fmtDate(lastImpuesto.fecha)} />
                   {Object.entries(IMPUESTO_LABELS).map(([k, l]) =>
-                    lastImpuesto[k] ? <InfoRow key={k} label={l} value={lastImpuesto[k]} /> : null
+                    lastImpuesto[k] ? <InfoRow key={k} label={l} value={fmtImpuestoVal(lastImpuesto[k])} /> : null
                   )}
                 </div>
               ) : (
@@ -347,23 +356,17 @@ export default function PapelRosa() {
               )}
             </div>
 
-            {/* columna der: última liquidación */}
+            {/* columna der: último recibo del inquilino */}
             <div style={colBox}>
-              <p style={colTitle}>Última liquidación</p>
+              <p style={colTitle}>Último recibo del inquilino</p>
               {lastRecibo ? (
                 <div className="flex flex-col gap-1">
                   <InfoRow label="Período"   value={lastRecibo.periodo} />
                   <InfoRow label="Fecha"     value={fmtDate(lastRecibo.fecha)} />
                   <InfoRow label="Importe"   value={formatCurrency(lastRecibo.importe)} />
-                  <InfoRow
-                    label="Honorarios"
-                    value={formatCurrency(
-                      Math.round(Number(lastRecibo.importe) * (Number(alquiler.honorario) || 0) / 100)
-                    )}
-                  />
                 </div>
               ) : (
-                <p style={{ fontSize: "0.85em", opacity: 0.5 }}>Sin liquidaciones registradas</p>
+                <p style={{ fontSize: "0.85em", opacity: 0.5 }}>Sin recibos registrados</p>
               )}
             </div>
 

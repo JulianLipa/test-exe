@@ -77,7 +77,7 @@ export default function ListadoRecibos() {
             <p className="thin">No hay recibos para el contrato N° {selected.id}.</p>
           ) : (
             <ScrollTopTable>
-              <table style={{ borderCollapse: "collapse", width: "100%" }}>
+              <table style={{ borderCollapse: "collapse", width: "auto" }}>
                 <thead>
                   <tr>
                     <th style={thStyle}>Imprimir</th>

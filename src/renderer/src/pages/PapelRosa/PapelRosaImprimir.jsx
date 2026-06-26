@@ -1,4 +1,5 @@
 import PrintHeader from "../../components/PrintHeader";
+import PrintPage from "../../components/PrintPage";
 import { formatCurrency } from "../ReciboAlquiler/components/form.utils";
 
 export default function PapelRosaImprimir({ data }) {
@@ -13,38 +14,41 @@ export default function PapelRosaImprimir({ data }) {
   ];
 
   return (
-    <div>
+    <PrintPage>
       <PrintHeader />
-      <hr className="recibo-print__linea" />
+      <hr className="border-0 border-t border-[#333] my-[5px]" />
 
-      <div className="recibo-print__datos" style={{ marginBottom: 6 }}>
-        <div className="recibo-print__row">
-          <span className="recibo-print__label">Locador</span>
-          <span className="recibo-print__value">{data.apellidoDueno ?? "-"}</span>
-        </div>
-        <div className="recibo-print__row">
-          <span className="recibo-print__label">Período</span>
-          <span className="recibo-print__value">{data.periodo ?? "-"}</span>
-        </div>
+      <div className="flex flex-col gap-[5px] my-[5px] mb-[6px]">
+        <Row label="Locador" value={data.apellidoDueno ?? "-"} />
+        <Row label="Período" value={data.periodo ?? "-"} />
       </div>
 
-      <hr className="recibo-print__linea" />
+      <hr className="border-0 border-t border-[#333] my-[5px]" />
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 3, margin: "4px 0" }}>
+      <div className="flex flex-col gap-[3px] my-[4px]">
         {filas.map((f, i) => (
-          <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-            <span style={{ fontWeight: 600 }}>{f.label}</span>
-            <span style={{ fontWeight: 500 }}>{f.signo} {formatCurrency(f.value)}</span>
+          <div key={i} className="flex justify-between text-[1em]">
+            <span className="font-semibold">{f.label}</span>
+            <span className="font-medium">{f.signo} {formatCurrency(f.value)}</span>
           </div>
         ))}
       </div>
 
-      <hr className="recibo-print__linea" />
+      <hr className="border-0 border-t border-[#333] my-[5px]" />
 
-      <div className="recibo-print__importe">
+      <div className="flex justify-between mt-[6px] text-[1.08em] font-bold">
         <span>Total a cobrar</span>
         <span>{formatCurrency(data.totalACobrar)}</span>
       </div>
+    </PrintPage>
+  );
+}
+
+function Row({ label, value }) {
+  return (
+    <div className="flex gap-[8px]">
+      <span className="font-bold min-w-[110px] text-[1em]">{label}</span>
+      <span className="font-medium text-[1em]">{value}</span>
     </div>
   );
 }

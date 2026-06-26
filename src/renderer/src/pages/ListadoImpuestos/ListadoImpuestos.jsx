@@ -81,7 +81,7 @@ export default function ListadoImpuestos() {
             <p className="thin">No hay impuestos para el contrato N° {selected.id}.</p>
           ) : (
             <ScrollTopTable>
-              <table style={{ borderCollapse: "collapse", width: "100%" }}>
+              <table style={{ borderCollapse: "collapse", width: "auto" }}>
                 <thead>
                   <tr>
                     <th style={thStyle}>Imprimir</th>
