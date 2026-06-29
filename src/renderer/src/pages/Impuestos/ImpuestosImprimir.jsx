@@ -16,7 +16,6 @@ export default function ImpuestosImprimir({ form, alquiler, alquilerId }) {
   return (
     <PrintPage>
       <Copia form={form} alquiler={alquiler} alquilerId={alquilerId} />
-      <div className="h-[12px] border-b border-dashed border-[#aaa] mb-[12px]" />
       <Copia form={form} alquiler={alquiler} alquilerId={alquilerId} />
     </PrintPage>
   );
@@ -26,7 +25,7 @@ function Copia({ form, alquiler, alquilerId }) {
   const fecha = new Date().toLocaleDateString("es-AR");
 
   return (
-    <>
+    <div className="recibo-mitad">
       <PrintHeader />
 
       <hr className="border-0 border-t border-[#333] my-[5px]" />
@@ -66,7 +65,7 @@ function Copia({ form, alquiler, alquilerId }) {
           </div>
         </>
       )}
-    </>
+    </div>
   );
 }
 

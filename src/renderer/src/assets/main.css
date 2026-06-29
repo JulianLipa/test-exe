@@ -224,10 +224,22 @@ button.card-contrato:hover .badge-vencido {
   z-index: -9999;
 }
 
+/* Cada comprobante ocupa exactamente la mitad de una hoja A4 (297mm / 2 = 148.5mm),
+   de modo que entren dos por hoja. El padding actúa como margen interno (antes lo
+   daba el margin del @page) y el borde inferior punteado marca la línea de corte.
+   box-sizing: border-box garantiza que padding y borde no sumen altura extra,
+   por lo que dos cajas suman 297mm exactos = una A4 completa. */
+.recibo-mitad {
+  height: 148.5mm;
+  padding: 12mm;
+  box-sizing: border-box;
+  border-bottom: 1px dashed #bbb;
+}
+
 @media print {
   @page {
     size: A4 portrait;
-    margin: 12mm;
+    margin: 0;
   }
 
   body {

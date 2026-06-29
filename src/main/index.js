@@ -157,6 +157,18 @@ app.whenReady().then(() => {
     ].some((f) => norm(f).includes(nq));
   };
 
+  // Compara un registro almacenado contra el que envía el renderer para eliminarlo.
+  // Los registros de recibos/impuestos no tienen id propio: los creados desde la app
+  // traen createdAt (prácticamente único), y los importados desde Excel se distinguen
+  // por sus campos de negocio. Comparando todas las claves del registro almacenado
+  // cubrimos ambos casos. Devuelve la primera coincidencia.
+  const mismoRegistro = (almacenado, objetivo) =>
+    !!almacenado &&
+    !!objetivo &&
+    Object.keys(almacenado).every(
+      (k) => JSON.stringify(almacenado[k]) === JSON.stringify(objetivo[k]),
+    );
+
   ipcMain.handle("db:filtrarPorId", async (_, query) => {
     const data = await readJSON(dbPath());
     const q = String(query ?? "").trim().toLowerCase();
@@ -193,6 +205,21 @@ app.whenReady().then(() => {
     return recibos.filter((r) => ids.has(String(r.alquilerId ?? r.id ?? "")));
   });
 
+  ipcMain.handle("recibos:eliminar", async (_, recibo) => {
+    try {
+      const path = recibosPath();
+      const data = await readJSON(path);
+      const idx = data.findIndex((r) => mismoRegistro(r, recibo));
+      if (idx === -1) return { ok: false, error: "Recibo no encontrado" };
+      data.splice(idx, 1);
+      await fs.writeFile(path, JSON.stringify(data, null, 2));
+      return { ok: true };
+    } catch (error) {
+      console.error("Error eliminando recibo:", error);
+      return { ok: false, error: error.message };
+    }
+  });
+
   // =========================
   // 🧾 IMPUESTOS
   // =========================
@@ -220,6 +247,21 @@ app.whenReady().then(() => {
     const [impuestos, alquileres] = await Promise.all([readJSON(impuestosPath()), readJSON(dbPath())]);
     const ids = new Set(alquileres.filter((a) => alquilerMatchesQuery(a, q)).map((a) => String(a.id)));
     return impuestos.filter((i) => ids.has(String(i.alquilerId ?? "")));
+  });
+
+  ipcMain.handle("impuestos:eliminar", async (_, impuesto) => {
+    try {
+      const path = impuestosPath();
+      const data = await readJSON(path);
+      const idx = data.findIndex((i) => mismoRegistro(i, impuesto));
+      if (idx === -1) return { ok: false, error: "Impuesto no encontrado" };
+      data.splice(idx, 1);
+      await fs.writeFile(path, JSON.stringify(data, null, 2));
+      return { ok: true };
+    } catch (error) {
+      console.error("Error eliminando impuesto:", error);
+      return { ok: false, error: error.message };
+    }
   });
 
   // =========================

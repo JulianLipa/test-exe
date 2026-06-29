@@ -54,6 +54,7 @@ const store = {
   addRecibo: (recibo) => ipcRenderer.invoke("recibos:agregar", recibo),
   getRecibos: () => ipcRenderer.invoke("recibos:leer"),
   searchRecibosPorContrato: (query) => ipcRenderer.invoke("recibos:buscarPorContrato", query),
+  deleteRecibo: (recibo) => ipcRenderer.invoke("recibos:eliminar", recibo),
 
   // =========================
   // 🧾 IMPUESTOS
@@ -62,6 +63,7 @@ const store = {
   addImpuesto: (impuesto) => ipcRenderer.invoke("impuestos:agregar", impuesto),
   getImpuestos: () => ipcRenderer.invoke("impuestos:leer"),
   searchImpuestosPorContrato: (query) => ipcRenderer.invoke("impuestos:buscarPorContrato", query),
+  deleteImpuesto: (impuesto) => ipcRenderer.invoke("impuestos:eliminar", impuesto),
 
   // =========================
   // 🌸 PAPEL ROSA

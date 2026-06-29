@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ImpuestosImprimir from "../Impuestos/ImpuestosImprimir";
 import PrinterIcon from "../../components/PrinterIcon";
 import ScrollTopTable from "../../components/ScrollTopTable/ScrollTopTable.jsx";
 import SearchBar from "../../components/SearchBar.jsx";
 import ContratoCards from "../../components/ContratoCards.jsx";
 import ContratoSeleccionado from "../../components/ContratoSeleccionado.jsx";
+import ConfirmModal from "../../components/ConfirmModal.jsx";
 import VolverModal from "../../components/VolverModal.jsx";
 import { fmtDate } from "../../utils/formatters.js";
 import { thStyle, tdStyle, trStyle } from "../../utils/tableStyles.js";
@@ -43,6 +44,25 @@ export default function ListadoImpuestos() {
   const firstInputRef = useRef(null);
   const { triggerPrint, portal } = usePrint();
   useEffect(() => { firstInputRef.current?.focus(); }, []);
+
+  const [toDelete, setToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!toDelete || deleting) return;
+    setDeleting(true);
+    try {
+      const res = await window.store.deleteImpuesto(toDelete);
+      if (res?.ok) {
+        if (selected) await handleSelect(selected); // refresca la tabla desde la DB
+      } else {
+        console.error("No se pudo eliminar el impuesto:", res?.error);
+      }
+    } finally {
+      setDeleting(false);
+      setToDelete(null);
+    }
+  };
 
   return (
     <div className="montserrat flex flex-col gap-5">
@@ -86,6 +106,7 @@ export default function ListadoImpuestos() {
                   <tr>
                     <th style={thStyle}>Imprimir</th>
                     {COLS.map((col) => <th key={col.label} style={thStyle}>{col.label}</th>)}
+                    <th style={thStyle}>Eliminar</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -107,6 +128,15 @@ export default function ListadoImpuestos() {
                         </button>
                       </td>
                       {COLS.map((col) => <td key={col.label} style={tdStyle}>{col.render(item)}</td>)}
+                      <td style={tdStyle}>
+                        <button
+                          type="button"
+                          title="Eliminar impuesto"
+                          onClick={() => setToDelete(item)}
+                        >
+                          🗑
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -115,6 +145,25 @@ export default function ListadoImpuestos() {
           )}
         </>
       )}
+
+      <ConfirmModal
+        open={!!toDelete}
+        onConfirm={handleDelete}
+        onCancel={() => !deleting && setToDelete(null)}
+      >
+        <div className="p-4">
+          <p className="mb-4">
+            ¿Eliminar el comprobante de impuestos del contrato N° <b>{toDelete?.alquilerId ?? "-"}</b>
+            {toDelete?.fecha ? ` (${fmtDate(toDelete.fecha)})` : ""}? Esta acción no se puede deshacer.
+          </p>
+          <div className="flex gap-2">
+            <button onClick={handleDelete} className="buttonBlack" disabled={deleting}>
+              {deleting ? "Eliminando..." : "Sí, eliminar"}
+            </button>
+            <button onClick={() => setToDelete(null)} disabled={deleting}>Cancelar</button>
+          </div>
+        </div>
+      </ConfirmModal>
 
       {portal}
     </div>

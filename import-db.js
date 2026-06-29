@@ -187,19 +187,23 @@ const impuestosJSON = impRaw.slice(1)
 fs.writeFileSync(path.join(DB_DIR, 'impuestos.json'), JSON.stringify(impuestosJSON));
 console.log(`✓ impuestos.json: ${impuestosJSON.length} registros`);
 
-// ── 4. LIQUIDACION-ALQUILERES → recibos-alq.json ─────────────────────────────
-const liqSheet = wb.Sheets['LIQUIDACION-ALQUILERES'];
-if (!liqSheet) { console.error('ERROR: Hoja LIQUIDACION-ALQUILERES no encontrada'); process.exit(1); }
-const liqRaw = XLSX.utils.sheet_to_json(liqSheet, { header: 1, defval: '' });
-console.log(`LIQUIDACION-ALQUILERES: ${liqRaw.length - 1} filas`);
+// ── 4. RECIBOS-PAGO → recibos-alq.json ───────────────────────────────────────
+// Importante: el recibo refleja lo que ABONÓ el inquilino (importe bruto), por eso
+// se usa la hoja RECIBOS-PAGO ("Importe pagado"). NO usar LIQUIDACION-ALQUILERES,
+// cuya columna "importe alq liquidado" es el neto que se le liquida al dueño
+// (bruto menos honorarios). Columnas: 1=Idalquiler, 2=Fecha Pago, 3=Importe pagado, 4=Período pagado.
+const recibosSheet = wb.Sheets['RECIBOS-PAGO'];
+if (!recibosSheet) { console.error('ERROR: Hoja RECIBOS-PAGO no encontrada'); process.exit(1); }
+const recibosRaw = XLSX.utils.sheet_to_json(recibosSheet, { header: 1, defval: '' });
+console.log(`RECIBOS-PAGO: ${recibosRaw.length - 1} filas`);
 
-const recibosJSON = liqRaw.slice(1)
+const recibosJSON = recibosRaw.slice(1)
   .filter(r => r[1] && r[2])   // debe tener alquilerId y fecha
   .map(r => {
     const isoFecha = excelDateToISO(r[2]);
     return {
       alquilerId: Number(r[1]),
-      importe:    parseMoney(r[3]),
+      importe:    parseMoney(r[3]),   // bruto pagado por el inquilino
       fecha:      isoFecha,
       periodo:    periodoToString(r[4], r[2]),
     };

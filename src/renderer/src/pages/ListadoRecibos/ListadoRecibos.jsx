@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ReciboImprimir from "../ReciboAlquiler/components/ReciboImprimir";
 import { formatCurrency } from "../ReciboAlquiler/components/form.utils";
 import PrinterIcon from "../../components/PrinterIcon";
@@ -6,6 +6,7 @@ import ScrollTopTable from "../../components/ScrollTopTable/ScrollTopTable.jsx";
 import SearchBar from "../../components/SearchBar.jsx";
 import ContratoCards from "../../components/ContratoCards.jsx";
 import ContratoSeleccionado from "../../components/ContratoSeleccionado.jsx";
+import ConfirmModal from "../../components/ConfirmModal.jsx";
 import VolverModal from "../../components/VolverModal.jsx";
 import { fmtDate } from "../../utils/formatters.js";
 import { thStyle, tdStyle, trStyle } from "../../utils/tableStyles.js";
@@ -39,6 +40,25 @@ export default function ListadoRecibos() {
   const firstInputRef = useRef(null);
   const { triggerPrint, portal } = usePrint();
   useEffect(() => { firstInputRef.current?.focus(); }, []);
+
+  const [toDelete, setToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!toDelete || deleting) return;
+    setDeleting(true);
+    try {
+      const res = await window.store.deleteRecibo(toDelete);
+      if (res?.ok) {
+        if (selected) await handleSelect(selected); // refresca la tabla desde la DB
+      } else {
+        console.error("No se pudo eliminar el recibo:", res?.error);
+      }
+    } finally {
+      setDeleting(false);
+      setToDelete(null);
+    }
+  };
 
   return (
     <div className="montserrat flex flex-col gap-5">
@@ -84,6 +104,7 @@ export default function ListadoRecibos() {
                     {["N° Contrato", "Período", "Fecha", "Importe"].map((h) => (
                       <th key={h} style={thStyle}>{h}</th>
                     ))}
+                    <th style={thStyle}>Eliminar</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -103,6 +124,15 @@ export default function ListadoRecibos() {
                       <td style={tdStyle}>{item.periodo || "-"}</td>
                       <td style={tdStyle}>{fmtDate(item.fecha)}</td>
                       <td style={tdStyle}>{formatCurrency(item.importe) || "-"}</td>
+                      <td style={tdStyle}>
+                        <button
+                          type="button"
+                          title="Eliminar recibo"
+                          onClick={() => setToDelete(item)}
+                        >
+                          🗑
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -111,6 +141,25 @@ export default function ListadoRecibos() {
           )}
         </>
       )}
+
+      <ConfirmModal
+        open={!!toDelete}
+        onConfirm={handleDelete}
+        onCancel={() => !deleting && setToDelete(null)}
+      >
+        <div className="p-4">
+          <p className="mb-4">
+            ¿Eliminar el recibo del período <b>{toDelete?.periodo || "-"}</b>
+            {toDelete?.importe ? ` por ${formatCurrency(toDelete.importe)}` : ""}? Esta acción no se puede deshacer.
+          </p>
+          <div className="flex gap-2">
+            <button onClick={handleDelete} className="buttonBlack" disabled={deleting}>
+              {deleting ? "Eliminando..." : "Sí, eliminar"}
+            </button>
+            <button onClick={() => setToDelete(null)} disabled={deleting}>Cancelar</button>
+          </div>
+        </div>
+      </ConfirmModal>
 
       {portal}
     </div>

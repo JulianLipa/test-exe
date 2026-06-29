@@ -32,9 +32,6 @@ export default function ReciboImprimir({ form, alquiler }) {
         importe={importe}
       />
 
-      {/* separador: solo línea, sin altura */}
-      <div style={{ borderBottom: "1px dashed #aaa" }} />
-
       {/* ── RECIBO (2da copia) ── */}
       <ReciboSection
         fecha={fecha}
@@ -55,9 +52,6 @@ export default function ReciboImprimir({ form, alquiler }) {
           neto={neto}
         />
 
-        {/* separador: solo línea, sin altura */}
-        <div style={{ borderBottom: "1px dashed #aaa" }} />
-
         <LiquidacionSection
           fecha={fecha}
           alquiler={alquiler}
@@ -73,7 +67,7 @@ export default function ReciboImprimir({ form, alquiler }) {
 
 function ReciboSection({ fecha, alquiler, locatarioNombre, locadorNombre, periodo, importe }) {
   return (
-    <div style={{ height: "136.5mm", boxSizing: "border-box" }}>
+    <div className="recibo-mitad">
       <PrintHeader />
 
       <hr className="border-0 border-t border-[#333] my-[5px]" />
@@ -101,7 +95,7 @@ function ReciboSection({ fecha, alquiler, locatarioNombre, locadorNombre, period
 
 function LiquidacionSection({ fecha, alquiler, locadorNombre, periodo, neto }) {
   return (
-    <div style={{ height: "136.5mm", boxSizing: "border-box" }}>
+    <div className="recibo-mitad">
       <PrintHeader />
 
       <hr className="border-0 border-t border-[#333] my-[5px]" />
